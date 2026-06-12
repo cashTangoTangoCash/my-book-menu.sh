@@ -1,0 +1,16 @@
+import csv
+import sys
+
+def find_column(csv_path, target_label):
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            header = next(reader)
+            # Find the index (0-based) of the column name
+            return header.index(target_label)
+    except (ValueError, StopIteration, FileNotFoundError):
+        return -1 # Error code
+
+if __name__ == "__main__":
+    # Usage: python3 get_column_index.py books.csv "last-viewed"
+    print(find_column(sys.argv[1], sys.argv[2]))
