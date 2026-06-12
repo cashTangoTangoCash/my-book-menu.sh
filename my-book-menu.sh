@@ -23,7 +23,7 @@ echo "a) view acquisition queue"
 echo "r) view reading queue"
 echo "d) show duplicates (same title)"
 echo "s) search the entire record with fzf"
-echo "l) view 100 most recently read movies"
+echo "h) view 100 most recently read books"
 echo "m) use fzf to choose among additional functions"
 echo "q) quit"
 echo "--------------------------------"
@@ -76,4 +76,62 @@ case $choice in
     QUERY=".read acquisition_queue.sql"
   ;;
 
+### menu choice r: duckdb query: reading queue
+  
+  r)
+    REPORT_TITLE="    Reading Queue"	
+    QUERY=".read reading_queue.sql"
+  ;;
+
+### menu choice d: duckdb query: duplicate records
+  
+  d)
+    REPORT_TITLE="    Duplicate Records"	
+    QUERY=".read duplicate-titles.sql"
+    ;;
+
+### menu choice s: select records in terminal via fzf - then form duckdb query from that selection set
+  
+  s)
+    REPORT_TITLE="    Search the Entire Record with fzf"	
+
+    # --multi allows you to select multiple movies with TAB
+
+    # 1. We feed fzf the CSV (excluding the header for cleaner searching)
+    # 2. We keep the whole line so fzf can search Title, Year, etc.
+    SELECTIONS=$(tail -n +2 "$CSV" | fzf --exact --reverse --multi --header "TAB to select, ENTER to finish")
+
+    if [ -n "$SELECTIONS" ]; then
+        # 3. Extract the ID (the first column) from the selected lines
+        # Assuming 'id' is the first column in your CSV
+        ID_LIST=$(echo "$SELECTIONS" | cut -d',' -f1 | paste -sd "," -)
+        
+        # 4. The SQL is now dead simple: no math, just a direct ID match
+        QUERY="SELECT * FROM read_csv_auto('$CSV') WHERE id IN ($ID_LIST);"
+    
+    fi
+    ;;
+
+### menu choice 5: duckdb query: 100 most recently viewed movies
+  
+  h)
+    REPORT_TITLE="    100 Most Recently Read Books"	
+    QUERY=".read last_read.sql"
+    ;;
+  
 esac
+### Execute DuckDB query, save report to /tmp, then open report in Emacs
+
+# in any menu choice that does not generate a query, you have to exit before the script gets here
+# in many menu choices, we have created a duckdb query.  now we generate a report via the query.
+
+# line mode looks ok
+echo "================================" > "$REPORT"
+echo "$REPORT_TITLE" >> "$REPORT"
+echo "================================" >> "$REPORT"
+duckdb -c ".mode line" -c ".maxrows 0" -c "$QUERY" >> "$REPORT"
+
+# Open the report in your current Emacs session
+emacsclient -n "$REPORT"
+
+echo "Report opened in Emacs buffer!"
