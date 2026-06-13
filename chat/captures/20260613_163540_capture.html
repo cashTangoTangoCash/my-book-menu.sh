@@ -1,0 +1,40 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 1</h1>
+<p><strong><a href="20260613_163535_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260613_163546_capture.html">Next →</a></strong></p>
+<hr />
+<p>Ah, the classic &quot;Frankenstein&quot; method of coding—copying, pasting, and stitching together old working projects. It’s honestly the most efficient way to get a new TUI up and running!</p>
+<p>Since you are using <code>read_csv_auto</code>, it looks like you are running <strong>DuckDB</strong>. DuckDB is usually pretty smart about inferring types, but since CSV blanks can sometimes be read as <code>NULL</code> or empty strings <code>''</code>, we want a <code>WHERE</code> clause that is robust enough to handle zeroes, blanks, and <code>NULL</code> values all at once.</p>
+<p>Here is how you can complete your <code>acquisition_queue.sql</code> file:</p>
+<pre><code class="language-sql">SELECT         
+        title,
+        authorLastName,
+        authorFirstName, 
+        year, 
+        otherOwners,
+        lastUpdated,
+        lastRead,
+        tags
+FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+WHERE 
+    -- 1. Must be in the queue
+    inQueue = 1
+    
+    -- 2. Digital copy is blank, null, or 0
+    AND (pcCopy IS NULL OR pcCopy = 0 OR pcCopy = '')
+    
+    -- 3. Physical copy is blank, null, or 0
+    AND (hardcopy IS NULL OR hardcopy = 0 OR hardcopy = '')
+
+ORDER BY 
+      lastUpdated DESC NULLS LAST
+
+</code></pre>
+<h3>Why this approach works safely:</h3>
+<ul>
+<li><strong>The <code>OR</code> safety net:</strong> In text-based CSV parsing, a blank cell can sometimes be imported as an empty string <code>''</code> or a proper SQL <code>NULL</code>. If DuckDB infers the column as an integer, it treats blanks as <code>NULL</code>. This query covers all bases (<code>NULL</code>, <code>0</code>, and <code>''</code>) so your TUI won't accidentally skip a book just because of a CSV formatting quirk.</li>
+<li><strong>Boolean logic:</strong> Because we wrapped the <code>pcCopy</code> and <code>hardcopy</code> conditions in parentheses, SQL will evaluate those bundles first, ensuring <em>both</em> media types are missing before putting the book on your acquisition list.</li>
+</ul>
+<p>How is the rest of the Book TUI coming along? Are you sticking with the same interface layout you used for the Garmin or Movie projects, or trying something new for this one?</p>
+<hr />
+<p><strong><a href="20260613_163535_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260613_163546_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260613_163540_capture.md&quot;)</p>

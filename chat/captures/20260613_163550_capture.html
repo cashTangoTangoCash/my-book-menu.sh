@@ -1,0 +1,24 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 2</h1>
+<p><strong><a href="20260613_163546_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260613_163553_capture.html">Next →</a></strong></p>
+<hr />
+<p>Ah, the classic &quot;strongly-typed&quot; slap in the face from DuckDB! You hit exactly what makes frankencoding so maddening: DuckDB looked at your CSV, saw numbers in the columns that <em>did</em> have data, and automatically decided, <em>&quot;Ah, <code>pcCopy</code> is an INT64!&quot;</em> Then, when it hit an empty cell <code>''</code>, it crashed because you can't compare a string to an integer.</p>
+<p>Since DuckDB already knows <code>pcCopy</code> and <code>hardcopy</code> are integers, we can completely remove the string check <code>''</code>. In DuckDB, empty cells in a numeric column are automatically converted to <code>NULL</code>.</p>
+<p>Update your <code>acquisition_queue.sql</code> WHERE clause to this cleaner, strictly-numeric version:</p>
+<pre><code class="language-sql">WHERE 
+    -- 1. Must be in the queue
+    inQueue = 1
+    
+    -- 2. Digital copy is blank (NULL) or 0
+    AND (pcCopy IS NULL OR pcCopy = 0)
+    
+    -- 3. Physical copy is blank (NULL) or 0
+    AND (hardcopy IS NULL OR hardcopy = 0)
+
+</code></pre>
+<h3>Why this fixes the bonfire:</h3>
+<p>Because DuckDB auto-detected the column as an integer, any blank cell is natively treated as <code>IS NULL</code>. By removing the <code>OR pcCopy = ''</code> check, we stop forcing DuckDB to do a string comparison on an integer column, and the error will vanish.</p>
+<p>The menu layout looks great, by the way—tying it directly into Emacs for the data-entry side is a slick move. Let's see if this gets option <code>a</code> behaving!</p>
+<hr />
+<p><strong><a href="20260613_163546_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260613_163553_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260613_163550_capture.md&quot;)</p>

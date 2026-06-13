@@ -97,3 +97,34 @@
     (message "New record ready with ID assigned.")))
 
 (define-key csv-mode-map (kbd "C-c n") 'book-insert-new-record)
+
+;;; book-edit-comment-indirect
+
+(defun book-edit-comment-indirect ()
+  "Jump to the comment column and trigger an indirect edit buffer."
+  (interactive)
+  (let* ((csv-path (buffer-file-name))
+         ;; Use your Python sensor to find the 'comment' column
+         (col-index (string-to-number 
+                     (shell-command-to-string 
+                      (format "python3 /home/dad84/Documents/2026/20260612-books-csv-code/get_column_index.py %s 'comment'" csv-path)))))
+  
+    (if (< col-index 0)
+        (error "Could not find 'comment' column!")
+      
+      (beginning-of-line)
+      (dotimes (i col-index)
+        (search-forward "," (line-end-position) t))
+      
+      ;; Identify the cell boundaries for edit-indirect
+      (let ((start (point))
+            (end (save-excursion 
+                   (if (search-forward "," (line-end-position) t)
+                       (1- (point))
+                     (line-end-position)))))
+        ;; The 'Capture' Magic
+        (edit-indirect-region start end t)
+        (message "Editing cell. C-c C-c to commit, C-c C-k to abort.")))))
+
+(define-key csv-mode-map (kbd "C-c c") 'book-edit-comment-indirect)
+

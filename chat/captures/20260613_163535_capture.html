@@ -1,0 +1,21 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>PROMPT 1</h1>
+<p><strong>← Start | <a href="../full_transcript.html">Full Index</a> | <a href="20260613_163540_capture.html">Next →</a></strong></p>
+<hr />
+<p>previously we worked on so called &quot;TUI&quot; scripts - a &quot;garmin TUI&quot; and a &quot;movie TUI&quot; - for garmin bike ride recordings and movie collections respectively.  As you might expect now I want a book TUI.  I am plodding along, copying and pasting from those projects.  let's solve a small sql problem.  in books.csv, I have columns for pcCopy, hardcopy, and inQueue.  for acquisition_queue.sql I am looking for the books that are to be acquired; the logic should be: inQueue is not blank (it should be 1) and both pcCopy and hardcopy are blank (or 0).  The incomplete acquisition_queue.sql is:</p>
+<p>SELECT         
+        title,
+        authorLastName,
+        authorFirstName, 
+        year, 
+        otherOwners,
+        lastUpdated,
+        lastRead,
+        tags
+FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+WHERE inQueue = 1
+ORDER BY 
+      lastUpdated DESC NULLS LAST</p>
+<hr />
+<p><strong>← Start | <a href="../full_transcript.html">Full Index</a> | <a href="20260613_163540_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260613_163535_capture.md&quot;)</p>
