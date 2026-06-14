@@ -1,0 +1,52 @@
+# my-org-roam-list-dailies-chronologically
+
+A lightweight, robust Emacs Lisp utility for `org-roam` users who want a strictly chronological, searchable index of their daily journal nodes inside the minibuffer.
+
+## The Problem
+
+Out of the box, searching for daily journal entries via `org-roam-node-find` does not list nodes in chronological order.
+
+Modern completion frameworks like Vertico or Selectrum, combined with matching engines like Orderless, sort results based on their own heuristics (such as history, string length, or matching weights).
+
+## The Solution
+
+`my-org-roam-dailies` queries your Org-roam SQLite database specifically for nodes residing inside your `org-roam-dailies-directory`. It then:
+1. Resolves absolute/relative path discrepancies dynamically.
+2. Sorts the nodes chronologically based on their actual file dates (`YYYY-MM-DD`).
+3. Disables Vertico/completion sorting *temporarily* during execution to guarantee a perfect sequential timeline.
+4. Allows you to use Orderless to filter seamlessly by date fragments (e.g., `2026-02 `) or keywords in your verbose titles, while strictly preserving chronological order.
+
+Some brief testing has been done in a vertico / orderless emacs 30.2 setup.
+
+## Usage
+
+- Run it: `M-x my/org-roam-list-dailies-chronologically`
+
+ - Your minibuffer will open, displaying all daily journal nodes in exact chronological order (oldest to newest).
+
+ - Scroll: Use your standard arrow keys or `C-n` / `C-p` to flip through time sequentially.
+
+ - Filter: Type a year/month prefix like `2026-03`  to narrow down to a specific month, or type a keyword to narrow result set by title.
+
+- Hit `RET` to jump straight to that node.
+
+## Customization
+
+Reversing the Timeline (Newest First)
+
+If your daily journal grows massive and you prefer to see your most recent logs at the very top of the minibuffer, open my-org-roam-dailies.el and change the sorting operator from `string<` to `string>`:
+
+```
+;; Change this line in the sorting block:
+(string> (org-roam-node-file a) (org-roam-node-file b))
+```
+## How it was Developed
+
+This script was built through an iterative dialogue with Gemini (free
+version). For a detailed look at the logic, the alternative approaches
+considered, and the evolution of the code, check the contents of the
+chat/ folder in this repository.
+
+## License
+
+See LICENSE file
