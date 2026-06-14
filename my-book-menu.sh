@@ -19,9 +19,10 @@ echo "================================"
 echo "    EMACS BOOK REPORTER        "
 echo "================================"
 echo "o) open the csv file of books in emacs for editing, & load your custom lisp functions for data entry"
-echo "a) view acquisition queue"
-echo "r) view reading queue"
-echo "d) show duplicates (same title)"
+echo "a) view acquisition queue - books you want to get a copy of on hand - either borrowed or purchased"
+echo "r) view reading queue - books you have on hand and that you want to make time to read"
+echo "d) show duplicates (same title and same author last name)"
+echo "e) show duplicates (titles start the same way and one is longer than the other)"
 echo "s) search the entire record with fzf"
 echo "h) view 100 most recently read books"
 echo "m) use fzf to choose among additional functions"
@@ -82,11 +83,18 @@ case $choice in
     QUERY=".read reading_queue.sql"
   ;;
 
-### menu choice d: duckdb query: duplicate records
+### menu choice d: duckdb query: exact duplicate records
   
   d)
-    REPORT_TITLE="    Duplicate Records"	
-    QUERY=".read duplicate-titles.sql"
+    REPORT_TITLE="    Exact Duplicate Titles"	
+    QUERY=".read exact_duplicates.sql"
+    ;;
+  
+### menu choice e: duckdb query: similar title duplicate records
+  
+  e)
+    REPORT_TITLE="    Duplicate titles: one title continues beyond the other"	
+    QUERY=".read variation_duplicates.sql"
     ;;
 
 ### menu choice s: select records in terminal via fzf - then form duckdb query from that selection set

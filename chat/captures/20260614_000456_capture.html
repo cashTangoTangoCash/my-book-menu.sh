@@ -1,0 +1,40 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 4</h1>
+<p><strong><a href="20260614_000451_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_000500_capture.html">Next →</a></strong></p>
+<hr />
+<p>To pull this off in SQL, we have to move past a simple <code>GROUP BY</code> and use a <strong>Self-Join</strong>. We will compare the table to itself, look for matches where one title starts with the other, and filter out exact identical matches so a book doesn't match with itself.</p>
+<p>DuckDB has fantastic built-in string manipulation functions that make this much easier. We can use <code>regexp_replace()</code> to strip out punctuation and normalize whitespace, and then use the <code>LIKE</code> operator to see if the longer title starts with the shorter one.</p>
+<p>Here is how you can realize <code>duplicates.sql</code>:</p>
+<pre><code class="language-sql">WITH normalized_books AS (
+    SELECT 
+        title AS original_title,
+        authorLastName,
+        -- Strip punctuation, lower-case it, and collapse multiple spaces into one
+        trim(regexp_replace(lower(title), '[^\w\s]', '', 'g')) AS clean_title
+    FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+)
+SELECT 
+    b1.original_title AS shorter_title,
+    b2.original_title AS longer_title,
+    b1.authorLastName AS author
+FROM normalized_books b1
+JOIN normalized_books b2 
+  -- Join where the clean version of the longer title STARTS with the shorter title
+  ON b2.clean_title LIKE b1.clean_title || ' %'
+WHERE 
+  -- Safety check: ensure they aren't the exact same title string
+  b1.original_title != b2.original_title
+ORDER BY b1.authorLastName, b1.original_title;
+
+</code></pre>
+<h3>How this witchcraft works:</h3>
+<ol>
+<li><strong>The CTE (<code>WITH normalized_books</code>):</strong> It creates a temporary version of your dataset. <code>regexp_replace(lower(title), '[^\w\s]', '', 'g')</code> turns <code>&quot;This Title, Is Shorter!!&quot;</code> into <code>&quot;this title is shorter&quot;</code>.</li>
+<li><strong>The Self-Join (<code>FROM ... b1 JOIN ... b2</code>):</strong> This lets SQL compare every book to every <em>other</em> book in the file.</li>
+<li><strong>The <code>LIKE</code> Match (<code>b2.clean_title LIKE b1.clean_title || ' %'</code>):</strong> The <code>|| ' %'</code> appends a space and a wildcard to the shorter title. This ensures that <code>&quot;The Hobbit&quot;</code> matches <code>&quot;The Hobbit and Beyond&quot;</code>, but prevents <code>&quot;Hobbit&quot;</code> from accidentally matching <code>&quot;Hobbiton&quot;</code> (matching a partial word).</li>
+<li><strong>The <code>WHERE</code> clause:</strong> Ensures a book doesn't match itself, and guarantees that <code>b1</code> is strictly the shorter one and <code>b2</code> is strictly the longer one.</li>
+</ol>
+<p>This will instantly catch things like <code>&quot;Dracula&quot;</code> vs <code>&quot;Dracula (Hardcover Edition)&quot;</code> or minor subtitle discrepancies!</p>
+<hr />
+<p><strong><a href="20260614_000451_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_000500_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_000456_capture.md&quot;)</p>

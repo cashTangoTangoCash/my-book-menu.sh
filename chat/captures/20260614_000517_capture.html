@@ -1,0 +1,59 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 6</h1>
+<p><strong><a href="20260614_000510_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_000523_capture.html">Next →</a></strong></p>
+<hr />
+<p>You hit the nail on the head. This is exactly why fuzzy data matching requires a bit of real-world testing.</p>
+<p>Throwing out that <code>WHERE</code> clause is a tempting quick fix, but if you do, <strong>every single book in your entire database will match with itself</strong> (since &quot;is math real&quot; is exactly equal to &quot;is math real&quot;). Your report would immediately flood with hundreds of rows of every book pointing at itself.</p>
+<p>So, why didn't these two records match?</p>
+<p>It actually isn't the safety check's fault—it's a tiny logical flaw in my <code>LIKE</code> condition.</p>
+<h3>The Culprit: The Trailing Space <code>|| ' %'</code></h3>
+<p>In the previous script, I used this joining rule:</p>
+<pre><code class="language-sql">ON b2.clean_title LIKE b1.clean_title || ' %'
+
+</code></pre>
+<p>This requires the longer title to have a <strong>space</strong> after the shorter title. It was designed to catch <code>&quot;Is Math Real and Other Questions&quot;</code>.</p>
+<p>But in your test case, the two titles are <strong>exactly identical</strong> after cleaning. Because they are identical, <code>b2</code> does <em>not</em> have a space followed by more characters. It ends exactly where <code>b1</code> ends.</p>
+<p>So, when the query looks at them, the <code>LIKE</code> condition fails because there is no extra text. And if we look at the safety check, <code>b1.original_title != b2.original_title</code> <em>also</em> fails because they are strings of the exact same title!</p>
+<h3>The Fix: Match Identical Titles OR Extensions</h3>
+<p>To fix this so that identical titles match <em>and</em> partial prefixes match, we need to adjust the <code>ON</code> and <code>WHERE</code> clauses.</p>
+<p>We want to say: Match if the titles normalize to the exact same thing, OR if one is a prefix of the other. To keep the report clean, we will use the unique row IDs (which appear to be <code>3</code> and <code>4</code> in your CSV) to ensure we don't match a row to itself.</p>
+<p>Assuming that first column is an ID column (let's call it <code>id</code>), here is the corrected query:</p>
+<pre><code class="language-sql">WITH normalized_books AS (
+    SELECT 
+        -- Assuming your first column is named 'id' or similar
+        column0 AS book_id, 
+        title AS original_title,
+        authorLastName,
+        trim(regexp_replace(lower(title), '[^\w\s]', '', 'g')) AS clean_title
+    FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+)
+SELECT 
+    b1.original_title AS shorter_title,
+    b2.original_title AS longer_title,
+    COALESCE(b1.authorLastName, b2.authorLastName, 'Unknown') AS author
+FROM normalized_books b1
+JOIN normalized_books b2 
+  ON (
+    -- Case A: The titles clean up to be exactly identical
+    b1.clean_title = b2.clean_title 
+    -- Case B: b2 is a longer title that starts with b1
+    OR b2.clean_title LIKE b1.clean_title || ' %'
+  )
+WHERE 
+  -- Real Safety Check: Stop a row from matching itself using the unique ID
+  b1.book_id != b2.book_id
+  
+  -- Prevent duplicate pairs (e.g., showing A vs B, and then B vs A)
+  AND b1.book_id &lt; b2.book_id;
+
+</code></pre>
+<p><em>(Note: If DuckDB doesn't name that first unlabelled column <code>column0</code>, just swap <code>column0</code> on line 4 for whatever your ID column header is, or use <code>row_number() over ()</code> if you don't have explicit IDs!)</em></p>
+<h3>Why this setup handles the test case:</h3>
+<ol>
+<li><strong><code>b1.clean_title = b2.clean_title</code></strong> triggers because both normalize to <code>&quot;is math real&quot;</code>.</li>
+<li><strong><code>b1.book_id != b2.book_id</code></strong> passes because ID 3 does not equal ID 4.</li>
+<li><strong><code>b1.book_id &lt; b2.book_id</code></strong> ensures it only prints the pair once (ID 3 vs ID 4), rather than reversing it on the next line and printing ID 4 vs ID 3.</li>
+</ol>
+<hr />
+<p><strong><a href="20260614_000510_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_000523_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_000517_capture.md&quot;)</p>

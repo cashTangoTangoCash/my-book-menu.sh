@@ -1,0 +1,44 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 5</h1>
+<p><strong><a href="20260614_000500_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_000510_capture.html">Next →</a></strong></p>
+<hr />
+<p>You are exactly right—this is a classic data-matching problem that engineers have been dealing with for decades, often called <strong>fuzzy matching</strong> or <strong>record linkage</strong>.</p>
+<p>The reason your test worked perfectly even with a blank author field comes down to how the <code>JOIN</code> logic in that query behaves. Let's peel back the curtain on why it worked and what <code>b1.authorLastName</code> is actually doing.</p>
+<hr />
+<h3>Why the duplicate was still caught (The Missing Author)</h3>
+<p>In the query, the &quot;handshake&quot; between the two books happens <strong>strictly on the titles</strong>. Look at this specific line:</p>
+<pre><code class="language-sql">ON b2.clean_title LIKE b1.clean_title || ' %'
+
+</code></pre>
+<p>Notice that <code>authorLastName</code> is completely absent from that handshake. The database engine does not care if the authors match, if they are blank, or if one is Shakespeare and the other is Stephen King. It <em>only</em> looks at the titles to decide if two rows are duplicates.</p>
+<p>Because the text of your titles matched the rule, the database successfully linked them together.</p>
+<hr />
+<h3>Why the report still showed the &quot;correct&quot; author</h3>
+<p>When the database found the duplicate, it linked your original complete record (<code>b1</code>) and your new incomplete duplicate record (<code>b2</code>).</p>
+<p>In the <code>SELECT</code> block, I wrote:</p>
+<pre><code class="language-sql">SELECT 
+    b1.original_title AS shorter_title,
+    b2.original_title AS longer_title,
+    b1.authorLastName AS author  -- &lt;--- Look closely here!
+
+</code></pre>
+<p>By pulling the author from <code>b1.authorLastName</code>, the query explicitly printed the author attached to the <strong>shorter title</strong> record.</p>
+<ul>
+<li>If your original, well-entered book happened to be the shorter title, it pulled the real author from there.</li>
+<li>If you swapped it and made the blank-author record the shorter one, the report column for <code>author</code> would actually come up blank!</li>
+</ul>
+<hr />
+<h3>How to keep it bulletproof</h3>
+<p>Since you mentioned you don't want to enforce complete data entry (which is totally fair for a personal project!), we can make a tiny tweak. We can use a function called <code>COALESCE</code>. It acts like a fallback helper: <em>&quot;Give me the author from Book 1, but if that's blank, grab it from Book 2 instead.&quot;</em></p>
+<p>Here is the updated <code>SELECT</code> section you can swap into your script:</p>
+<pre><code class="language-sql">SELECT 
+    b1.original_title AS shorter_title,
+    b2.original_title AS longer_title,
+    -- If b1's author is missing/null, fallback to b2's author. If both are missing, show 'Unknown'
+    COALESCE(b1.authorLastName, b2.authorLastName, 'Unknown') AS author
+
+</code></pre>
+<p>This way, as you &quot;lazy-load&quot; your CSV data over time, the duplicate finder remains incredibly forgiving and will grab whatever scraps of author data it can find from either record!</p>
+<hr />
+<p><strong><a href="20260614_000500_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_000510_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_000506_capture.md&quot;)</p>

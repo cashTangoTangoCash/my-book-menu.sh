@@ -1,0 +1,16 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>PROMPT 4</h1>
+<p><strong><a href="20260613_163602_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_000456_capture.html">Next →</a></strong></p>
+<hr />
+<p>in the movies TUI, we had a kind of lazy duplicate title functionality:</p>
+<p>SELECT title, count(*) as count 
+FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+GROUP BY title 
+HAVING count &gt; 1;</p>
+<p>for books, I want to have something a little bit fancier.  two titles are the same if they 'begin the same' and one goes on longer (after stripping out punctuation and 'extra' whitespace):</p>
+<p>this title is shorter
+this title is shorter and then it goes on a bit longer</p>
+<p>how to realize this?</p>
+<hr />
+<p><strong><a href="20260613_163602_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_000456_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_000451_capture.md&quot;)</p>
