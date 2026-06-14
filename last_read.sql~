@@ -1,0 +1,9 @@
+SELECT 
+    "last viewed",
+    title,
+    genre, 
+    "my rating"
+FROM read_csv_auto('/home/dad84/Documents/2024/movies-csv/movies-all.csv')
+WHERE "last viewed" IS NOT NULL 
+ORDER BY "last viewed" DESC
+LIMIT 100;

@@ -128,3 +128,87 @@
 
 (define-key csv-mode-map (kbd "C-c c") 'book-edit-comment-indirect)
 
+;;; book-toggle-queue
+
+(defun book-toggle-queue ()
+  "Toggle the 'inQueue' field between 0 and 1."
+  (interactive)
+  (let* ((csv-path (buffer-file-name))
+         (raw-output (shell-command-to-string 
+                      (format "python3 /home/dad84/Documents/2026/20260612-books-csv-code/get_column_index.py %s 'inQueue'" csv-path)))
+         (col-index (string-to-number raw-output)))
+    
+    (if (< col-index 0)
+        (error "Could not find 'inQueue' column!")
+      
+      (save-excursion
+        (beginning-of-line)
+        ;; Precision skip to the correct column
+        (dotimes (i col-index)
+          (search-forward "," (line-end-position) t))
+        
+        (let ((start (point)))
+          ;; Identify cell end
+          (if (search-forward "," (line-end-position) t)
+              (backward-char 1))
+          
+          (let* ((current-val (buffer-substring-no-properties start (point)))
+                 ;; Toggle Logic: If it's "1", make it "0". Everything else becomes "1".
+                 (new-val (if (string= current-val "1") "0" "1")))
+            (delete-region start (point))
+            (insert new-val))))
+      (message "inQueue field toggled!"))))
+
+(define-key csv-mode-map (kbd "C-c q") 'book-toggle-queue)
+
+;;; book-tag-add 
+
+(defun book-tag-add ()
+  (interactive)
+  (book--tag-operate "--add" "Add Tag: "))
+
+;;; book-tag-remove
+
+(defun book-tag-remove ()
+  (interactive)
+  (book--tag-operate "--remove" "Remove Tag: "))
+
+;;; book-tag-operate
+
+(defun book--tag-operate (action prompt)
+  "Save buffer, then call python to add/remove tags for the current row."
+  ;; 1. CRITICAL: Save current edits (like the Title) so Python can see them
+  (save-buffer)
+  
+  (let* ((script-path "/home/dad84/Documents/2026/20260612-books-csv-code/tag_manager.py")
+         (csv-path (buffer-file-name))
+         (row-id (save-excursion 
+                   (beginning-of-line)
+                   ;; This regex looks for the ID at the very start of the line
+                   (if (looking-at "\\([^,]+\\),") 
+                       (match-string 1)
+                     (error "Could not find ID at start of line. Did you run sanitize-ids?"))))
+         ;; Use python to get the menu of existing tags
+         (raw-tags (shell-command-to-string (format "python3 %s %s --list" script-path csv-path)))
+         (tag-list (split-string (string-trim raw-tags) "|"))
+         (chosen-tag (completing-read prompt tag-list)))
+
+    (unless (string-empty-p chosen-tag)
+      (let ((exit-code (shell-command 
+                        (format "python3 %s %s %s %s --id %s" 
+                                script-path 
+                                (shell-quote-argument csv-path)
+                                action
+                                (shell-quote-argument chosen-tag) 
+                                (shell-quote-argument row-id)))))
+        (if (zerop exit-code)
+            (progn 
+              ;; Pull the changes Python made back into Emacs
+              (revert-buffer t t) 
+              (message "Tag operation successful."))
+          (error "Python script failed with exit code %d" exit-code))))))
+
+;; Bindings
+(define-key csv-mode-map (kbd "C-c t") 'book-tag-add)
+(define-key csv-mode-map (kbd "C-c r") 'book-tag-remove)
+

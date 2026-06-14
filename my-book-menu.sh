@@ -24,7 +24,7 @@ echo "r) view reading queue - books you have on hand and that you want to make t
 echo "d) show duplicates (same title and same author last name)"
 echo "e) show duplicates (titles start the same way and one is longer than the other)"
 echo "s) search the entire record with fzf"
-echo "h) view 100 most recently read books"
+echo "l) view 100 most recently read books"
 echo "m) use fzf to choose among additional functions"
 echo "q) quit"
 echo "--------------------------------"
@@ -48,10 +48,9 @@ case $choice in
     echo "  C-c c  -> edit comment (Capture Mode) - (book-edit-comment-indirect)"
     echo "            * Use C-c C-c to SAVE and EXIT capture"
     echo "            * Use C-c C-k to DISCARD changes"
-    echo "***  C-c q  -> add to, or remove from, (toggle) queue (0/1) - (book-toggle-queue)"
-    echo "***  C-c t  -> add a tag - (book-tag-add)"
-    echo "***  C-c r  -> remove a tag - (book-tag-remove)"
-    echo "***  C-c !  -> perform data cleanup on csv file - (book-full-cleanup)"    
+    echo "  C-c q  -> add to, or remove from, (toggle) queue (0/1) - (book-toggle-queue)"
+    echo "  C-c t  -> add a tag - (book-tag-add)"
+    echo "  C-c r  -> remove a tag - (book-tag-remove)"
     
     echo "=================================================="
     
@@ -119,14 +118,15 @@ case $choice in
     fi
     ;;
 
-### menu choice 5: duckdb query: 100 most recently viewed movies
+### menu choice l: duckdb query: 100 most recently viewed movies
   
-  h)
+  l)
     REPORT_TITLE="    100 Most Recently Read Books"	
     QUERY=".read last_read.sql"
     ;;
   
 esac
+
 ### Execute DuckDB query, save report to /tmp, then open report in Emacs
 
 # in any menu choice that does not generate a query, you have to exit before the script gets here
