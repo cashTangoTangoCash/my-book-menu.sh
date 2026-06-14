@@ -30,8 +30,9 @@ while true; do
     echo "s) search the entire record with fzf"
     echo "l) view 100 most recently read books"
     echo "f) show a simple list of tags in order of decreasing frequency"
+    echo "t) choose one or more tags and see records having all chosen tags (AND)"
     echo "*** m) use fzf to choose among additional functions"
-    echo "*** q) quit"
+    echo "q) quit"
     echo "--------------------------------"
     read -p "Choose an option: " choice
 
@@ -143,7 +144,30 @@ while true; do
 	    QUERY=".read tag_frequency.sql"
 	    break
 	    ;;
+	
+### menu choice t: duckdb query: chose one or more tags with fzf then report records that have all chosen tags
 
+	t)
+	    # 1. Pipe the frequency report into fzf (stripping out counts)
+            #    Replacing spaces/newlines with commas for the SQL array format
+	    raw_selections=$(duckdb -noheader -list < tag_frequency.sql | awk -F'|' '{print $1}' | sed 's/[[:space:]]*//g' | fzf --multi --prompt="Select tags (Tab to mark, Enter to confirm): ")
+
+            # If nothing was selected, exit cleanly
+            if [ -z "$raw_selections" ]; then
+                echo "No tags selected."
+                break
+            fi
+
+            # 2. Format selections as a comma-separated string (e.g., "math,interested")
+            #    and export it so DuckDB can read it via getenv()
+            export CHOSEN_TAGS=$(echo "$raw_selections" | paste -sd, -)
+
+            # 3. Standard execution exactly like your other reports
+            REPORT_TITLE="    Books Matching Tags: $CHOSEN_TAGS"
+            QUERY=".read tagged_books.sql"
+            break
+            ;;
+	    	
 ### menu choice q: quit
         q)
             echo "Goodbye!"

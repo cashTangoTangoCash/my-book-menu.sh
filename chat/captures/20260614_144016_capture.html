@@ -1,0 +1,37 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>PROMPT 16</h1>
+<p><strong><a href="20260614_144007_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_144020_capture.html">Next →</a></strong></p>
+<hr />
+<p>hold on, in both code iterations, I was seeing fzf and choosing a tag.  Then I end up with:</p>
+<h1>================================
+    EMACS BOOK REPORTER        </h1>
+<h2>o) open the csv file of books in emacs for editing, &amp; load your custom lisp functions for data entry
+a) view acquisition queue - books you want to get a copy of on hand - either borrowed or purchased
+r) view reading queue - books you have on hand and that you want to make time to read
+d) show duplicates (same title and same author last name)
+e) show duplicates (titles start the same way and one is longer than the other)
+s) search the entire record with fzf
+l) view 100 most recently read books
+f) show a simple list of tags in order of decreasing frequency
+t) choose one or more tags and see records having all chosen tags (AND)
+*** m) use fzf to choose among additional functions
+q) quit</h2>
+<p>Choose an option: t
+┌─────────┬────────────────┬─────────┐
+│  title  │ authorLastName │  tags   │
+│ varchar │    varchar     │ varchar │
+└─────────┴────────────────┴─────────┘
+                0 rows              
+Report opened in Emacs buffer!</p>
+<p>is it possible to go back to the approach of having a .sql file, similar to:</p>
+<h3>menu choice f: duckdb query: list tags in order of decreasing frequency</h3>
+<p>  
+    f)
+        REPORT_TITLE=&quot;    Tags&quot;    
+        QUERY=&quot;.read tag_frequency.sql&quot;
+        break
+        ;;</p>
+<p>maybe a clue to why the past two iterations are not working as desired: in emacs, the inline sql code is bright yellow for some reason (that looks weird to me but maybe is perfectly ok).  shellcheck is not identifying errors - it looks like all style/info stuff.</p>
+<hr />
+<p><strong><a href="20260614_144007_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_144020_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_144016_capture.md&quot;)</p>

@@ -886,3 +886,378 @@ Now that the structural layout of the TUI is behaving itself, how are those two 
 Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_140900_capture.md")
 
 ---
+
+# PROMPT 14
+let's go back to tags.  so far we just print a report of tags in order of decreasing frequency.  I think it's possible to use fzf to interactively choose one or more tags (fzf --multi).  then print out the report of the tagged records.  if we chose multiple tags, we want to see records that are tagged with both tags.
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_143954_capture.md")
+
+---
+
+# RESPONSE 14
+This is where the combination of `fzf` and DuckDB becomes incredibly powerful. By passing the `-m` or `--multi` flag to `fzf`, you can use the **Tab** key to select multiple tags from your frequency list.
+
+To make this work seamlessly in a Bash script without hardcoding complex SQL logic, we can grab the tags you selected, format them dynamically into a SQL `WHERE` clause, and feed them right back into DuckDB.
+
+Here is how you can implement the interactive multi-tag browser inside your script.
+
+### Step 1: Update your `my-book-menu.sh` case option
+
+Find your `t)` option for the tag frequency report and replace it with this interactive routing logic:
+
+```bash
+        t)
+            # 1. Get the list of unique tags from your SQL script and pass to fzf
+            #    Using -m allows selecting multiple rows with the TAB key
+            selected_tags=$(duckdb -noheader -list < tag_frequency.sql | awk '{print $1}' | fzf --multi --prompt="Select tags (Tab to mark multiple, Enter to confirm): ")
+
+            # If the user exits fzf without picking anything, break out cleanly
+            if [ -z "$selected_tags" ]; then
+                echo "No tags selected."
+                break
+            fi
+
+            # 2. Turn the newline-separated choices into an array
+            mapfile -t tag_array <<< "$selected_tags"
+
+            # 3. Build the dynamic WHERE clause for SQL
+            #    We want: tags LIKE '%|tag1|%' AND tags LIKE '%|tag2|%'
+            where_clause=""
+            for i in "${!tag_array[@]}"; do
+                tag="${tag_array[$i]}"
+                if [ $i -eq 0 ]; then
+                    where_clause="WHERE tags LIKE '%|$tag|%'"
+                else
+                    where_clause="$where_clause AND tags LIKE '%|$tag|%'"
+                fi
+            done
+
+            # 4. Construct and run the query on the fly using a Bash Here-Doc
+            duckdb <<EOF
+SELECT 
+    title,
+    authorLastName,
+    tags
+FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+$where_clause
+ORDER BY authorLastName, title;
+EOF
+            break
+            ;;
+
+```
+
+### How the Bash logic pulls this off:
+
+1. **`awk '{print $1}'`**: Your `tag_frequency.sql` outputs columns for both the tag name and its count. We pipe that through `awk` to strip away the numeric frequency counts so `fzf` only handles the raw tag strings.
+2. **`fzf --multi`**: This opens up your interactive picker. You can scroll up and down, type to fuzzy search, and tap **Tab** to select multiple tags. When you hit **Enter**, `fzf` outputs your selections separated by newlines.
+3. **The `for` Loop**: Because you want a strict **AND** relationship (books matching *all* selected tags), the loop strings together multiple `LIKE` statements. For instance, if you select `math` and `interested`, it generates:
+`WHERE tags LIKE '%|math|%' AND tags LIKE '%|interested|%'`
+4. **The `||` Anchor**: By including the pipes in the `LIKE` syntax (`%|tag|%`), we prevent a tag like `math` from accidentally pulling up a book tagged with `polymath`.
+
+### A minor tweak to `tag_frequency.sql`
+
+To ensure the `awk` command in Step 1 extracts the tag name perfectly without getting confused by terminal borders, make sure your existing `tag_frequency.sql` file doesn't have any extra decorative lines or headers. It should look clean like this:
+
+```sql
+WITH split_tags AS (
+    SELECT string_split(trim(tags, '|'), '|') AS tag_list
+    FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+    WHERE tags IS NOT NULL AND tags != ''
+),
+flattened_tags AS (
+    SELECT unnest(tag_list) AS single_tag
+    FROM split_tags
+)
+SELECT 
+    single_tag AS tag,
+    COUNT(*) AS frequency
+FROM flattened_tags
+WHERE trim(single_tag) != ''
+GROUP BY single_tag
+ORDER BY frequency DESC, tag ASC;
+
+```
+
+Give this a spin with your terminal on one screen. You'll be able to quickly drill down into specific intersections of your collection—like viewing only books that are both `|math|` and `|reading-queue|`—while keeping the core codebase perfectly straightforward!
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_144000_capture.md")
+
+---
+
+# PROMPT 15
+that looks pretty complex to me (not surprising due to my lack of knowledge of the building blocks used).  Things are not working yet:
+
+================================
+    EMACS BOOK REPORTER        
+================================
+o) open the csv file of books in emacs for editing, & load your custom lisp functions for data entry
+a) view acquisition queue - books you want to get a copy of on hand - either borrowed or purchased
+r) view reading queue - books you have on hand and that you want to make time to read
+d) show duplicates (same title and same author last name)
+e) show duplicates (titles start the same way and one is longer than the other)
+s) search the entire record with fzf
+l) view 100 most recently read books
+f) show a simple list of tags in order of decreasing frequency
+t) choose one or more tags and see records having all chosen tags (AND)
+*** m) use fzf to choose among additional functions
+q) quit
+--------------------------------
+Choose an option: t
+┌─────────┬────────────────┬─────────┐
+│  title  │ authorLastName │  tags   │
+│ varchar │    varchar     │ varchar │
+└─────────┴────────────────┴─────────┘
+                0 rows
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_144003_capture.md")
+
+---
+
+# RESPONSE 15
+That is completely fair. I threw a massive wall of Bash array syntax, loop counters, and inline SQL generations at you all at once. When you're frankencoding, piling that much unfamiliar plumbing into a script is exactly how a small bug gets buried in the noise.
+
+Let’s look at why it’s printing an empty table.
+
+When you chose option `t`, DuckDB immediately printed an empty table structure without showing `fzf` at all. This means this line failed to grab any data:
+
+```bash
+selected_tags=$(duckdb -noheader -list < tag_frequency.sql | awk '{print $1}' | fzf --multi ...)
+
+```
+
+Because `selected_tags` ended up completely empty, the script skipped straight down to the SQL query, plugged in a blank `WHERE` clause, and DuckDB returned exactly `0 rows`.
+
+Instead of trying to untangle that messy Bash array code, let's throw it out and use a much simpler, more transparent approach that matches the rest of your scripts.
+
+---
+
+### The Clean, No-Clever-Bash Approach
+
+Instead of forcing Bash to dynamically build a complex query on the fly, we can use DuckDB's built-in `list_contains` function. It is incredibly readable and does all the heavy lifting for us.
+
+Replace your `t)` menu block with this streamlined version:
+
+```bash
+        t)
+            # 1. Run your frequency script, strip counts with awk, and let fzf capture selections
+            selected_tags=$(duckdb -noheader -list < tag_frequency.sql | awk '{print $1}' | fzf --multi --prompt="Select tags (Tab to mark, Enter to confirm): ")
+
+            # 2. Check if you actually picked anything. If not, exit cleanly.
+            if [ -z "$selected_tags" ]; then
+                echo "No tags selected."
+                break
+            fi
+
+            # 3. Convert the newline list from fzf into a clean, comma-separated string for SQL
+            #    Example: 'math', 'interested'
+            sql_tag_list=$(echo "$selected_tags" | awk '{print "\x27" $0 "\x27"}' | paste -sd, -)
+
+            # 4. Run a simple, static query using DuckDB's list functions
+            duckdb <<EOF
+WITH book_list_tags AS (
+    SELECT 
+        title,
+        authorLastName,
+        tags,
+        -- Turn the row's text string '|math|interested|' into a clean SQL list ['math', 'interested']
+        string_split(trim(tags, '|'), '|') AS current_book_tags
+    FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+)
+SELECT title, authorLastName, tags
+FROM book_list_tags
+WHERE 
+    -- This matches rows where the book's tag list contains ALL tags in our chosen array
+    list_has_all(current_book_tags, [$sql_tag_list])
+ORDER BY authorLastName, title;
+EOF
+            break
+            ;;
+
+```
+
+### Why this is easier to manage:
+
+* **No `for` loops in Bash:** We let `fzf` hand us the tags, we wrap them in standard single quotes using `awk` (e.g., `'math', 'interested'`), and we drop that string directly into a standard SQL array bracket: `[$sql_tag_list]`.
+* **Standard SQL Functions:** DuckDB has a dedicated function called `list_has_all()`. It takes the book's list of tags and checks it against your selection array. No tedious string concatenations or nesting required.
+
+### If it still returns 0 rows:
+
+If you drop this in and it *still* skips `fzf` and outputs `0 rows`, run this single diagnostic command directly in your terminal prompt:
+
+```bash
+duckdb -noheader -list < tag_frequency.sql
+
+```
+
+If that command prints absolutely nothing to your terminal, it means DuckDB isn't finding `tag_frequency.sql` in the directory where you are launching `./my-book-menu.sh`. If that's the culprit, we just need to add the full absolute path to `tag_frequency.sql` inside the script so it can always find its buddy!
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_144007_capture.md")
+
+---
+
+# PROMPT 16
+hold on, in both code iterations, I was seeing fzf and choosing a tag.  Then I end up with:
+
+================================
+    EMACS BOOK REPORTER        
+================================
+o) open the csv file of books in emacs for editing, & load your custom lisp functions for data entry
+a) view acquisition queue - books you want to get a copy of on hand - either borrowed or purchased
+r) view reading queue - books you have on hand and that you want to make time to read
+d) show duplicates (same title and same author last name)
+e) show duplicates (titles start the same way and one is longer than the other)
+s) search the entire record with fzf
+l) view 100 most recently read books
+f) show a simple list of tags in order of decreasing frequency
+t) choose one or more tags and see records having all chosen tags (AND)
+*** m) use fzf to choose among additional functions
+q) quit
+--------------------------------
+Choose an option: t
+┌─────────┬────────────────┬─────────┐
+│  title  │ authorLastName │  tags   │
+│ varchar │    varchar     │ varchar │
+└─────────┴────────────────┴─────────┘
+                0 rows              
+Report opened in Emacs buffer!
+
+is it possible to go back to the approach of having a .sql file, similar to:
+
+### menu choice f: duckdb query: list tags in order of decreasing frequency
+  
+    f)
+        REPORT_TITLE="    Tags"    
+        QUERY=".read tag_frequency.sql"
+        break
+        ;;
+
+maybe a clue to why the past two iterations are not working as desired: in emacs, the inline sql code is bright yellow for some reason (that looks weird to me but maybe is perfectly ok).  shellcheck is not identifying errors - it looks like all style/info stuff.
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_144016_capture.md")
+
+---
+
+# RESPONSE 16
+Got it. My apologies for misreading the symptom—if `fzf` was showing up and letting you pick a tag, then the plumbing was working, but the actual SQL comparison was failing silently behind the scenes.
+
+That bright yellow text in Emacs is a massive clue. It means Emacs is parsing that entire block of text as one giant literal string, and somewhere inside it, a hidden quoting conflict or variable expansion glitch is scrambling the values before they ever reach DuckDB.
+
+Let's absolutely go back to the dedicated `.sql` file approach. It matches your exact workflow, keeps the Bash script dead simple, and gets rid of all that finicky inline string manipulation.
+
+Here is how we can do this using a clean, separate file named `tagged_books.sql`.
+
+---
+
+### Step 1: Create `tagged_books.sql`
+
+This file will handle the data filtering. To get the selected tags from your terminal into this SQL query, we will use a standard DuckDB **environment variable** lookup (`getenv`).
+
+```sql
+-- tagged_books.sql
+WITH book_list_tags AS (
+    SELECT 
+        title,
+        authorLastName,
+        tags,
+        -- Turn '|math|interested|' into a clean SQL list ['math', 'interested']
+        string_split(trim(tags, '|'), '|') AS current_book_tags
+    FROM read_csv_auto('/home/dad84/Documents/2026/20260612-books-csv-file/books.csv')
+)
+SELECT 
+    title, 
+    authorLastName, 
+    tags
+FROM book_list_tags
+WHERE 
+    -- 1. Split the exported Bash string into a list
+    -- 2. Check if the book contains ALL elements of that list
+    list_has_all(
+        current_book_tags, 
+        string_split(getenv('CHOSEN_TAGS'), ',')
+    )
+ORDER BY authorLastName, title;
+
+```
+
+---
+
+### Step 2: Update your `my-book-menu.sh` for Option `t`
+
+Now, your Bash code doesn't have to generate any SQL text. It just runs your frequency list, pipes it to `fzf`, exports your selection to the environment, and reads the `.sql` file exactly like option `f` does.
+
+```bash
+        t)
+            # 1. Pipe the frequency report into fzf (stripping out counts)
+            #    Replacing spaces/newlines with commas for the SQL array format
+            raw_selections=$(duckdb -noheader -list < tag_frequency.sql | awk '{print $1}' | fzf --multi --prompt="Select tags (Tab to mark, Enter to confirm): ")
+
+            # If nothing was selected, exit cleanly
+            if [ -z "$raw_selections" ]; then
+                echo "No tags selected."
+                break
+            fi
+
+            # 2. Format selections as a comma-separated string (e.g., "math,interested")
+            #    and export it so DuckDB can read it via getenv()
+            export CHOSEN_TAGS=$(echo "$raw_selections" | paste -sd, -)
+
+            # 3. Standard execution exactly like your other reports
+            REPORT_TITLE="    Books Matching Tags: $CHOSEN_TAGS"
+            QUERY=".read tagged_books.sql"
+            break
+            ;;
+
+```
+
+### Why this is a much safer design:
+
+* **The Emacs text stays clean:** No more giant blocks of raw query code turning yellow inside your shell script.
+* **No quoting madness:** We aren't trying to inject raw SQL syntax inside Bash strings. We pass a plain text string (`"math,interested"`) via `export`, and let DuckDB natively slice it up using `string_split(..., ',')`.
+
+This should bring order back to the system and banish that blank 0-row table!
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_144020_capture.md")
+
+---
+
+# PROMPT 17
+getting closer!
+
+book_report.txt:
+
+================================    Books Matching Tags: checkLibrary|1================================
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_144023_capture.md")
+
+---
+
+# RESPONSE 17
+Progress! Seeing the report filename pop up means the routing is officially locked down, but looking at that header string, we have a tiny formatting clue:
+
+```text
+Books Matching Tags: checkLibrary|1
+
+```
+
+Ah! That trailing `|1` means `awk '{print $1}'` didn't completely clean up the text from `tag_frequency.sql`. It left a portion of the column line attached to the tag name, causing DuckDB to search for a tag literally named `checkLibrary|1` instead of just `checkLibrary`. No wonder it found 0 rows!
+
+The fix is incredibly simple. We just need to tell `awk` to explicitly use the pipe character (`|`) as its field separator when cleaning up the data from `tag_frequency.sql`.
+
+Change **just the first line** inside your `t)` menu block to look like this:
+
+```bash
+raw_selections=$(duckdb -noheader -list < tag_frequency.sql | awk -F'|' '{print $1}' | sed 's/[[:space:]]*//g' | fzf --multi --prompt="Select tags (Tab to mark, Enter to confirm): ")
+
+```
+
+### What this small shift fixes:
+
+* **`awk -F'|'`**: This explicitly tells `awk`: *"The boundary between columns is a pipe character."* This ensures it cleanly slices off everything after your tag name.
+* **`sed 's/[[:space:]]*//g'`**: This strips out any stray trailing spaces that DuckDB uses to pad out its columns, giving `fzf` and `tagged_books.sql` a 100% pure, clean text string.
+
+Swap that single line into your menu script, and your multi-tag intersection queries should instantly spring to life!
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_144027_capture.md")
+
+---
