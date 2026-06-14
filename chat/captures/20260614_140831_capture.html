@@ -1,0 +1,55 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 9</h1>
+<p><strong><a href="20260614_140828_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_140834_capture.html">Next →</a></strong></p>
+<hr />
+<p>That silence from a unhandled menu choice is the ultimate copy-paste trap. If the input doesn't match an explicit option in a Bash <code>case</code> statement, the script just skips the entire block and carries on—which in your case means it drops right into executing an empty or misaligned variable, giving you that confusing blank DuckDB screen.</p>
+<p>In Bash, you can catch all invalid inputs by using the wildcard operator <code>*</code> as the very last option in your <code>case</code> block. Think of it as a logical &quot;catch-all&quot; or &quot;default&quot; safety net.</p>
+<p>Here is how you can structure your menu loop to catch unhandled options, print a warning, and keep the menu alive instead of crashing or printing empty data:</p>
+<pre><code class="language-bash">while true; do
+    clear
+    echo &quot;================================&quot;
+    echo &quot;      EMACS BOOK REPORTER       &quot;
+    echo &quot;================================&quot;
+    echo &quot;o) open the csv file of books...&quot;
+    echo &quot;a) view acquisition queue&quot;
+    echo &quot;r) view reading queue&quot;
+    echo &quot;q) quit&quot;
+    echo &quot;--------------------------------&quot;
+    read -p &quot;Choose an option: &quot; choice
+
+    case &quot;$choice&quot; in
+        o)
+            # Your emacs code here
+            ;;
+        a)
+            # Your acquisition SQL code here
+            ;;
+        r)
+            # Your reading queue SQL code here
+            ;;
+        q)
+            echo &quot;Goodbye!&quot;
+            exit 0
+            ;;
+        
+        # ---------------------------------------------------------
+        # THE SAFETY NET: Match anything that wasn't caught above
+        # ---------------------------------------------------------
+        *)
+            echo -e &quot;\n\n[ERROR] '$choice' is not a implemented option yet!&quot;
+            echo &quot;Check your case statement letters in my-book-menu.sh.&quot;
+            read -p &quot;Press [Enter] to try again...&quot; temp_placeholder
+            ;;
+    esac
+done
+
+</code></pre>
+<h3>Why this saves you from the &quot;bonfire of bugs&quot;:</h3>
+<ol>
+<li><strong>The <code>*</code> Wildcard:</strong> Bash evaluates <code>case</code> statements from top to bottom. If your input doesn't match <code>o</code>, <code>a</code>, <code>r</code>, or <code>q</code>, it will inevitably hit the <code>*</code>.</li>
+<li><strong>The Pausing Prompt:</strong> Adding <code>read -p &quot;Press [Enter] to try again...&quot;</code> is critical. Because your menu likely runs inside a loop, without this pause, the script would instantly clear the screen and redraw the menu, hiding your error message before you can even read it.</li>
+</ol>
+<p>Now, if you hit a letter you forgot to finish coding, the script will explicitly call you out on it rather than feeding bad instructions to DuckDB!</p>
+<hr />
+<p><strong><a href="20260614_140828_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_140834_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_140831_capture.md&quot;)</p>

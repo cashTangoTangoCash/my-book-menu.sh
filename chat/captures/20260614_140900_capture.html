@@ -1,0 +1,76 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 13</h1>
+<p><strong><a href="20260614_140856_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | End →</strong></p>
+<hr />
+<p>You are remembering <strong>hledger</strong> perfectly! That is exactly how it and many classic command-line utilities operate. They use a &quot;one-shot&quot; or &quot;transient&quot; execution model: you run the command with some flags, it prints your report or fires up an interactive screen, and then it immediately drops you right back out to your shell prompt.</p>
+<p>Since you've got Emacs locked and loaded on a second monitor, that <code>break</code> approach is an elegant workflow. You aren't trapped inside a locked terminal loop; you run the script, select your report, the script terminates cleanly, and your terminal buffer is immediately free for you to run your next command, write a script, or check your git status.</p>
+<p>Here is what your clean, hledger-style, loop-breaking framework looks like now that the dust has settled:</p>
+<pre><code class="language-bash">#!/bin/bash
+
+while true; do
+    clear
+    echo &quot;================================&quot;
+    echo &quot;      EMACS BOOK REPORTER       &quot;
+    echo &quot;================================&quot;
+    echo &quot;o) open the csv file of books...&quot;
+    echo &quot;a) view acquisition queue&quot;
+    echo &quot;r) view reading queue&quot;
+    echo &quot;d) show exact duplicates&quot;
+    echo &quot;v) show title variations&quot;
+    echo &quot;t) view tag frequency report&quot;
+    echo &quot;q) quit&quot;
+    echo &quot;--------------------------------&quot;
+    read -p &quot;Choose an option: &quot; choice
+
+    case &quot;$choice&quot; in
+        o)
+            # Your Emacs data-entry routine
+            break
+            ;;
+        a)
+            duckdb &lt; acquisition_queue.sql
+            break
+            ;;
+        r)
+            duckdb &lt; reading_queue.sql
+            break
+            ;;
+        d)
+            duckdb &lt; exact_duplicates.sql
+            break
+            ;;
+        v)
+            duckdb &lt; variation_duplicates.sql
+            break
+            ;;
+        t)
+            duckdb &lt; tag_frequency.sql
+            break
+            ;;
+        q)
+            echo &quot;Goodbye!&quot;
+            exit 0
+            ;;
+        *)
+            echo -e &quot;\n[ERROR] '$choice' is not an implemented option yet!&quot;
+            read -p &quot;Press [Enter] to try again...&quot; temp_placeholder
+            ;;
+    esac
+done
+
+# -----------------------------------------------------------------
+# POST-MENU EXECUTION ZONE
+# -----------------------------------------------------------------
+# Because of 'break', the script lands here after running your choice.
+echo -e &quot;\nReport opened in Emacs buffer!&quot;
+
+</code></pre>
+<h3>Why this fits your dual-monitor setup perfectly:</h3>
+<ul>
+<li><strong>No Modality:</strong> You don't have to navigate &quot;back out&quot; of a menu system when you're done looking at a report. It prints, exits, and leaves the text on your screen while you glance over to your Emacs monitor to update your data.</li>
+<li><strong>The Safety Catch Lives On:</strong> Notice that the <code>*</code> default option at the bottom <em>doesn't</em> use <code>break</code>. If you make a typo or select a half-finished option, it will still scream at you and loop back up to let you try again, rather than dropping you out of the script with a blank error.</li>
+</ul>
+<p>Now that the structural layout of the TUI is behaving itself, how are those two separate duplicate checking files working out with your real data?</p>
+<hr />
+<p><strong><a href="20260614_140856_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | End →</strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_140900_capture.md&quot;)</p>

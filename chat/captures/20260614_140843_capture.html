@@ -1,0 +1,41 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 11</h1>
+<p><strong><a href="20260614_140840_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_140846_capture.html">Next →</a></strong></p>
+<hr />
+<p>Ah, yes! The classic Emacs commentary trap. That instant panic of seeing your nicely structured outline suddenly shoved across the screen is a rite of passage.</p>
+<p>The issue here isn't a bug in your Bash syntax. It’s actually Emacs strictly enforcing standard <strong>programming comment conventions</strong>, which clash directly with how we naturally want to write high-level outline notes.</p>
+<p>By default, the Emacs formatting engine follows a rigid rulebook for comments depending on how many hashes (<code>#</code>) you use:</p>
+<table>
+<thead>
+<tr>
+<th>Comment Style</th>
+<th>How Emacs Treats It during <code>indent-region</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>###</code></strong> (Three hashes)</td>
+<td><strong>Outliner style.</strong> Emacs leaves these completely flush with the left margin (<code>col 0</code>). They are treated as major section dividers.</td>
+</tr>
+<tr>
+<td><strong><code>##</code></strong> (Two hashes)</td>
+<td><strong>Block style.</strong> Emacs aligns these to match the indentation level of the code block they sit inside.</td>
+</tr>
+<tr>
+<td><strong><code>#</code></strong> (One hash)</td>
+<td><strong>Inline style.</strong> Emacs often tries to push these far to the right (aligned to a specific comment column, like column 40 or 32) to keep them out of the way of the code.</td>
+</tr>
+</tbody>
+</table>
+<h3>Why your outline got messed up</h3>
+<p>If you used <strong>one</strong> or <strong>two</strong> hashes for your outline notes (like <code># THE SAFETY NET</code> or <code>## DATA EVALUATION</code>), <code>indent-region</code> looked at them and said: <em>&quot;Oh, these are standard code-level comments. I must shift them over to match the indentation of the loop they are inside!&quot;</em> If you want an outline comment to stay anchored strictly to the left edge of the file—no matter what kind of loops or <code>case</code> statements are twisting around it—<strong>you must use exactly three hashes (<code>###</code>)</strong>.</p>
+<h3>How to safely test it:</h3>
+<ol>
+<li>Go to one of your outline comments and change it to start with three hashes: <code>### THE SAFETY NET</code></li>
+<li>Put your cursor on that line and hit <code>M-x indent-region</code> (or just <code>TAB</code>).</li>
+<li>You'll see it snap instantly to the far-left margin and stay there.</li>
+</ol>
+<p>If you don't want to go through your file changing all your outline notes to <code>###</code>, it is completely fine to skip <code>indent-region</code> on the whole buffer. You can just highlight individual, messy <code>case</code> blocks or <code>while</code> loops that you are actively working on and run <code>M-x indent-region</code> <em>only</em> on those specific lines!</p>
+<hr />
+<p><strong><a href="20260614_140840_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_140846_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_140843_capture.md&quot;)</p>

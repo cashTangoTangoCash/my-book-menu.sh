@@ -1,0 +1,70 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 12</h1>
+<p><strong><a href="20260614_140846_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_140856_capture.html">Next →</a></strong></p>
+<hr />
+<p>You are spot on. If you wrapped the <em>entire</em> menu interface inside that <code>while true</code> loop, it creates an infinite loop that will keep redrawing the menu forever.</p>
+<p>If the user selects an option (like <code>a</code> for the acquisition queue), the script will execute that DuckDB report, hit the end of that case block, and then immediately cycle back to the top of the loop to display the menu again. It never naturally &quot;escapes&quot; the loop to run whatever code you have sitting down at the bottom of the file.</p>
+<p>To fix this, you have two choices depending on how you want your TUI to behave.</p>
+<hr />
+<h3>Approach 1: Use <code>break</code> to escape the loop and continue down the script</h3>
+<p>If you want a menu choice to run its code, break out of the loop, and then execute the remaining lines at the bottom of your <code>my-book-menu.sh</code> script, you use the <code>break</code> keyword.</p>
+<pre><code class="language-bash">while true; do
+    # ... menu echo statements ...
+    read -p &quot;Choose an option: &quot; choice
+
+    case &quot;$choice&quot; in
+        a)
+            # 1. Run your DuckDB script
+            duckdb &lt; acquisition_queue.sql
+            
+            # 2. Break out of the 'while' loop entirely
+            break 
+            ;;
+        q)
+            echo &quot;Goodbye!&quot;
+            exit 0
+            ;;
+    esac
+done
+
+# -----------------------------------------------------------------
+# THE REST OF THE SCRIPT
+# This is where 'break' sends you. The code below will now execute!
+# -----------------------------------------------------------------
+echo &quot;We have escaped the loop. Running the rest of the script...&quot;
+
+</code></pre>
+<hr />
+<h3>Approach 2: Keep the menu alive, but move the &quot;rest of the script&quot; into the case block</h3>
+<p>Usually, with a TUI menu, you want the menu to stay on the screen <em>after</em> a report runs so you can immediately pick another option without restarting the script.</p>
+<p>If the code at the bottom of your file is meant to be part of the actions for specific menu choices, it's often better to move that code <em>inside</em> the case options, and use <code>exit 0</code> only when they choose <code>q</code>.</p>
+<p>If your script looks like this right now:</p>
+<pre><code class="language-bash">while true; do
+    # ... menu ...
+    case &quot;$choice&quot; in
+        a)
+            # running the report...
+            ;;
+    esac
+done
+
+# Rest of code that handles the report output or Emacs buffer loading...
+
+</code></pre>
+<p>You might want to refactor it so the handling code is tucked right into the option:</p>
+<pre><code class="language-bash">        a)
+            # Run the report
+            duckdb &lt; acquisition_queue.sql
+            
+            # Run the post-report code right here
+            echo &quot;Report opened in Emacs buffer!&quot; 
+            
+            # Pause so the user can see it before the menu redraws
+            read -p &quot;Press [Enter] to return to menu...&quot; temp
+            ;;
+
+</code></pre>
+<p>Which behavior are you looking for? Do you want the script to finish and exit the terminal completely after running a report, or do you want to return to the loop's main menu?</p>
+<hr />
+<p><strong><a href="20260614_140846_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260614_140856_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260614_140852_capture.md&quot;)</p>
