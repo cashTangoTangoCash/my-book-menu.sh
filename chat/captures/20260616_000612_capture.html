@@ -1,0 +1,65 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 20</h1>
+<p><strong><a href="20260616_000608_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260616_000615_capture.html">Next →</a></strong></p>
+<hr />
+<p>You are completely right. Shoving a complex string-manipulation one-liner directly inside an Elisp string is a recipe for quoting disaster—especially with Python's nested quotes and backslashes.</p>
+<p>Using your existing, tried-and-true Python pattern is much cleaner. We can write a tiny, dedicated Python script that simply outputs the headers as a clean, space-separated list, and then let Emacs easily read it.</p>
+<p>Let's do this the standard way without the &quot;clever&quot; one-liner mess.</p>
+<h3>Step 1: Create the Python Helper (<code>get_csv_headers.py</code>)</h3>
+<p>Save this simple script in your project folder (e.g., alongside your <code>.sql</code> files):</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+import csv
+import sys
+
+def get_headers(csv_path):
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            header = next(reader)
+            # Print space-separated fields for Emacs to easily parse
+            print(&quot; &quot;.join(f'&quot;{field}&quot;' for field in header))
+    except (StopIteration, FileNotFoundError):
+        print(&quot;&quot;) # Return empty on error
+
+if __name__ == &quot;__main__&quot;:
+    if len(sys.argv) &gt; 1:
+        get_headers(sys.argv[1])
+
+</code></pre>
+<hr />
+<h3>Step 2: Update your Emacs Lisp Code</h3>
+<p>Now, your Elisp doesn't have to wrestle with nested single and double quotes. It just calls your script, passes the CSV path, and wraps the output in parentheses to turn it into a native Elisp list.</p>
+<pre><code class="language-elisp">(defun book-goto-field ()
+  &quot;Dynamically prompt for a field name using a Python helper, then jump to it.&quot;
+  (interactive)
+  (let* ((csv-path &quot;/home/dad84/Documents/2026/20260612-books-csv-file/books.csv&quot;)
+         (script-path &quot;/home/dad84/Documents/2026/20260612-books-csv-file/get_csv_headers.py&quot;)
+         
+         ;; Run the python script and wrap its output in standard Lisp parentheses: (&quot;id&quot; &quot;title&quot; ...)
+         (cmd-str (format &quot;python3 %s %s&quot; script-path csv-path))
+         (raw-output (shell-command-to-string cmd-str))
+         (fields (read (format &quot;(%s)&quot; raw-output)))
+         
+         ;; Prompt the user with the dynamic list
+         (field (completing-read &quot;Go to field: &quot; fields nil t))
+         (target-index (cl-position field fields :test #'string=)))
+    
+    (if (not target-index)
+        (error &quot;Field not found in schema&quot;)
+      ;; Move to start of line, then skip past N commas
+      (move-beginning-of-line 1)
+      (when (&gt; target-index 0)
+        (if (search-forward &quot;,&quot; (line-end-position) t target-index)
+            nil
+          (message &quot;Warning: This record doesn't seem to have all fields yet.&quot;))))))
+
+</code></pre>
+<h3>Why this works where the other failed:</h3>
+<ul>
+<li><strong>Separation of Concerns:</strong> Python handles the CSV parsing safely using its native <code>csv</code> module, so things like spaces or commas in headers won't break it.</li>
+<li><strong>Pure Clean Strings:</strong> The <code>cmd-str</code> formatting inside Emacs is now just a straightforward execution path (<code>python3 script.py books.csv</code>), which keeps Emacs from turning bright yellow or getting confused by escaped quotation marks.</li>
+</ul>
+<p><em>(Note: Just double-check that the absolute path to your new <code>get_csv_headers.py</code> on line 5 matches where you saved the script!)</em></p>
+<hr />
+<p><strong><a href="20260616_000608_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260616_000615_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260616_000612_capture.md&quot;)</p>

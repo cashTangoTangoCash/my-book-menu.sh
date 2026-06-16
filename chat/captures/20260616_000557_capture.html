@@ -1,0 +1,49 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 18</h1>
+<p><strong><a href="20260616_000553_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260616_000559_capture.html">Next →</a></strong></p>
+<hr />
+<p>It is funny how the most fundamentally useful tools often only dawn on us <em>after</em> we’ve built the complex machinery. You built high-level tag parsers and indirect comment-capture buffers first, but it takes living in the data for a while to realize, <em>&quot;Wait, I just spend a lot of time manually arrowing over to column 12.&quot;</em></p>
+<p>That is excellent ergonomics. Instead of counting commas or spamming <code>f</code> and <code>t</code> in Emacs to navigate horizontally, you can type a shortcut, fuzzy-search <code>tags</code> or <code>comment</code> in the minibuffer via your completion framework (like Vertico, Helm, or Ivy if you use them), and your cursor instantly snaps to the correct column.</p>
+<p>Here is a robust Emacs Lisp function (<code>book-goto-field</code>) designed to do exactly that for your <code>books.csv</code> structure.</p>
+<h3>The Elisp Code</h3>
+<p>You can add this directly to your local configuration where your other custom book utilities live:</p>
+<pre><code class="language-elisp">(defvar book-fields-list
+  '(&quot;id&quot; &quot;title&quot; &quot;authorLastName&quot; &quot;authorFirstName&quot; &quot;year&quot; &quot;publisher&quot;
+    &quot;pcCopy&quot; &quot;hardcopy&quot; &quot;otherOwners&quot; &quot;inQueue&quot; &quot;lastUpdated&quot; &quot;lastRead&quot;
+    &quot;tags&quot; &quot;comment&quot;)
+  &quot;List of fields in the books CSV schema in their exact structural order.&quot;)
+
+(defun book-goto-field (field)
+  &quot;Prompt the user for a FIELD name, then move point to that field on the current line.&quot;
+  (interactive
+   (list (completing-read &quot;Go to field: &quot; book-fields-list nil t)))
+  (let ((target-index (cl-position field book-fields-list :test #'string=)))
+    (if (not target-index)
+        (error &quot;Field not found in schema&quot;)
+      ;; 1. Move to the absolute beginning of the physical line
+      (move-beginning-of-line 1)
+      ;; 2. If we want column 0 (id), we are already there.
+      ;;    Otherwise, move past N commas.
+      (when (&gt; target-index 0)
+        (if (search-forward &quot;,&quot; (line-end-position) t target-index)
+            ;; Point is now right after the comma; we are inside the target field.
+            nil
+          (message &quot;Warning: This specific record doesn't seem to have all %d fields yet.&quot; 
+                   (length book-fields-list)))))))
+
+</code></pre>
+<h3>How to Bind It to Your Workflow</h3>
+<p>Since your cheat sheet relies heavily on the <code>C-c</code> prefix for book operations, you could bind this to <code>C-c g</code> (for <strong>g</strong>oto) right where you load your other shortcuts:</p>
+<pre><code class="language-elisp">(local-set-key (kbd &quot;C-c g&quot;) #'book-goto-field)
+
+</code></pre>
+<p>Don't forget to update the terminal cheat sheet in <code>my-book-menu.sh</code> so it lists your new tool when you choose option <code>o</code>:</p>
+<pre><code class="language-text">  C-c g  -&gt; Jump directly to a field via minibuffer (book-goto-field)
+
+</code></pre>
+<h3>Why this might &quot;stick&quot;</h3>
+<p>The reason this has a high probability of survival in your workflow is that it works seamlessly with <strong>fuzzy completion</strong>. If you hit <code>C-c g</code>, type <code>t-a-g</code> (or just <code>t</code>), and hit <code>Enter</code>, you bypass the entire visual chore of scanning the line for separator commas. Your brain stays focused on the entry task rather than the mechanics of horizontal movement.</p>
+<p>Give it a spin on the live database. It will be interesting to see if your fingers naturally start defaulting to it over standard arrow keys!</p>
+<hr />
+<p><strong><a href="20260616_000553_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260616_000559_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260616_000557_capture.md&quot;)</p>

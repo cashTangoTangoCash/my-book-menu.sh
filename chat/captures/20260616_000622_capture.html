@@ -1,0 +1,57 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 21</h1>
+<p><strong><a href="20260616_000615_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | End →</strong></p>
+<hr />
+<p>That makes perfect sense. Since your automated background script is handing you a shiny new ID out of the gate, dropping the cursor right at column 0 forces you to immediately hit your arrow keys or run <code>M-f</code> just to get over to the <code>title</code> field. Shaving off that small friction point is exactly how a tool starts feeling invisible.</p>
+<p>To implement this tweak, we can append a single line right after your function finds the beginning of the new line. We just tell Emacs to search forward for that first comma and park the cursor directly after it.</p>
+<p>Here is the updated function with that navigation adjustment cleanly tucked into step 5:</p>
+<pre><code class="language-elisp">(defun book-insert-new-record ()
+  &quot;Insert a new record template, save, and run external ID sanitization.&quot;
+  (interactive)
+  (let* ((csv-path (buffer-file-name))
+         (sanitize-script &quot;/home/dad84/Documents/2026/20260612-books-csv-code/sanitize-ids.sh&quot;)
+         (comma-count (string-to-number 
+                       (shell-command-to-string 
+                        (format &quot;python3 -c \&quot;import csv; print(len(next(csv.reader(open('%s')))) - 1)\&quot;&quot; csv-path)))))
+    
+    ;; 1. Prepare the template at the end of the file
+    (save-excursion
+      (goto-char (point-max))
+      (unless (bolp) (insert &quot;\n&quot;))
+      (insert (make-string comma-count ?,)))
+
+    ;; 2. Save the buffer to disk so the bash script can see the new line
+    (save-buffer)
+
+    ;; 3. Call the bash wrapper to assign IDs
+    (message &quot;Sanitizing IDs...&quot;)
+    (shell-command (format &quot;bash %s&quot; sanitize-script))
+
+    ;; 4. Revert the buffer (ignore-auto and noconfirm) 
+    ;; This pulls the ID-filled version back into Emacs
+    (revert-buffer t t)
+
+    ;; 5. Clean up: Move cursor to the end of the file to start typing
+    (goto-char (point-max))
+
+    ;; If the point is on an empty line at the end (due to our \n), 
+    ;; move back to the previous line (our new record).
+    (when (looking-back &quot;\n&quot; 1)
+      (forward-line -1))
+    
+    (beginning-of-line)
+    
+    ;; TWEAK: Hop across the first comma to land directly in the second field (title)
+    (when (search-forward &quot;,&quot; (line-end-position) t 1)
+      ;; Point is now placed exactly after the first comma. Ready to type!
+      nil)
+
+    (message &quot;New record ready with ID assigned.&quot;)))
+
+</code></pre>
+<h3>What changed:</h3>
+<p>Right before the success message fires, <code>(search-forward &quot;,&quot; (line-end-position) t 1)</code> hunts for the absolute first comma on that specific line. When it finds it, it jumps the cursor right over it.</p>
+<p>Now, when you fire off <code>C-c n</code>, the buffer will reload, and you can instantly start typing the title of your book without touching a arrow key.</p>
+<hr />
+<p><strong><a href="20260616_000615_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | End →</strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260616_000622_capture.md&quot;)</p>

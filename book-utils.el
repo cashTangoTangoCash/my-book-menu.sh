@@ -94,6 +94,12 @@
       (forward-line -1))
     
     (beginning-of-line)
+
+    ;; TWEAK: Hop across the first comma to land directly in the second field (title)
+    (when (search-forward "," (line-end-position) t 1)
+      ;; Point is now placed exactly after the first comma. Ready to type!
+      nil)
+    
     (message "New record ready with ID assigned.")))
 
 (define-key csv-mode-map (kbd "C-c n") 'book-insert-new-record)
@@ -277,3 +283,31 @@
       (message "pcCopy field toggled!"))))
 
 (define-key csv-mode-map (kbd "C-c s") 'book-toggle-pcCopy-inventory)
+
+;;; book-goto-field
+
+(defun book-goto-field ()
+  "Dynamically prompt for a field name using a Python helper, then jump to it."
+  (interactive)
+  (let* ((csv-path "/home/dad84/Documents/2026/20260612-books-csv-file/books.csv")
+         (script-path "/home/dad84/Documents/2026/20260612-books-csv-code/get_csv_headers.py")
+         
+         ;; Run the python script and wrap its output in standard Lisp parentheses: ("id" "title" ...)
+         (cmd-str (format "python3 %s %s" script-path csv-path))
+         (raw-output (shell-command-to-string cmd-str))
+         (fields (read (format "(%s)" raw-output)))
+         
+         ;; Prompt the user with the dynamic list
+         (field (completing-read "Go to field: " fields nil t))
+         (target-index (cl-position field fields :test #'string=)))
+    
+    (if (not target-index)
+        (error "Field not found in schema")
+      ;; Move to start of line, then skip past N commas
+      (move-beginning-of-line 1)
+      (when (> target-index 0)
+        (if (search-forward "," (line-end-position) t target-index)
+            nil
+          (message "Warning: This record doesn't seem to have all fields yet."))))))
+
+(define-key csv-mode-map (kbd "C-c f") 'book-goto-field)

@@ -83,6 +83,7 @@ lisp tools have been loaded for: $CSV
 these tools operate on the record at point in emacs
 
 Helpful Shortcuts in CSV Mode:
+C-c f  -> Move cursor to a field in the present record by choosing field name in minibuffer (book-goto-field)
 C-c d  -> Stamp today's date in lastUpdated field of record at point (book-stamp-updated-today)
 C-c r  -> Stamp today's date in lastRead field of record at point (book-stamp-read-today)
 C-c n  -> Jump to bottom and insert new record (book-insert-new-record)
