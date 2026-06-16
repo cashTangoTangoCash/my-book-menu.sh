@@ -57,6 +57,8 @@ while true; do
 	    echo "  C-c q  -> add to, or remove from, (toggle) queue (0/1) - (book-toggle-queue)"
 	    echo "  C-c t  -> add a tag - (book-tag-add)"
 	    echo "  C-c r  -> remove a tag - (book-tag-remove)"
+	    echo "  C-c i  -> toggle hardcopy status - (book-toggle-hardcopy-inventory)"
+	    echo "  C-c s  -> toggle pcCopy status - (book-toggle-pcCopy-inventory)"
 	    
 	    echo "=================================================="
 	    

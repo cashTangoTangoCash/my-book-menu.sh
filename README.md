@@ -92,7 +92,8 @@ C-c c  -> edit comment (Capture Mode) - (book-edit-comment-indirect)
 C-c q  -> add to, or remove from, (toggle) queue (0/1) - (book-toggle-queue)
 C-c t  -> add a tag - (book-tag-add)
 C-c r  -> remove a tag - (book-tag-remove)
-
+C-c i  -> toggle hardcopy status - (book-toggle-hardcopy-inventory)
+C-c s  -> toggle pcCopy status - (book-toggle-pcCopy-inventory)
 ==================================================
 ```
 

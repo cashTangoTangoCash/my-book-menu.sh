@@ -212,3 +212,68 @@
 (define-key csv-mode-map (kbd "C-c t") 'book-tag-add)
 (define-key csv-mode-map (kbd "C-c r") 'book-tag-remove)
 
+;;; book-toggle-hardcopy-inventory
+
+(defun book-toggle-hardcopy-inventory ()
+  "Toggle the 'hardcopy' field between 0 and 1 - take a book in and out of inventory"
+  (interactive)
+  (let* ((csv-path (buffer-file-name))
+         (raw-output (shell-command-to-string 
+                      (format "python3 /home/dad84/Documents/2026/20260612-books-csv-code/get_column_index.py %s 'hardcopy'" csv-path)))
+         (col-index (string-to-number raw-output)))
+    
+    (if (< col-index 0)
+        (error "Could not find 'hardcopy' column!")
+      
+      (save-excursion
+        (beginning-of-line)
+        ;; Precision skip to the correct column
+        (dotimes (i col-index)
+          (search-forward "," (line-end-position) t))
+        
+        (let ((start (point)))
+          ;; Identify cell end
+          (if (search-forward "," (line-end-position) t)
+              (backward-char 1))
+          
+          (let* ((current-val (buffer-substring-no-properties start (point)))
+                 ;; Toggle Logic: If it's "1", make it "0". Everything else becomes "1".
+                 (new-val (if (string= current-val "1") "0" "1")))
+            (delete-region start (point))
+            (insert new-val))))
+      (message "hardcopy field toggled!"))))
+
+(define-key csv-mode-map (kbd "C-c i") 'book-toggle-hardcopy-inventory)
+
+;;; book-toggle-pcCopy-inventory
+
+(defun book-toggle-pcCopy-inventory ()
+  "Toggle the 'pcCopy' field between 0 and 1 - take a book in and out of digital copy inventory"
+  (interactive)
+  (let* ((csv-path (buffer-file-name))
+         (raw-output (shell-command-to-string 
+                      (format "python3 /home/dad84/Documents/2026/20260612-books-csv-code/get_column_index.py %s 'pcCopy'" csv-path)))
+         (col-index (string-to-number raw-output)))
+    
+    (if (< col-index 0)
+        (error "Could not find 'pcCopy' column!")
+      
+      (save-excursion
+        (beginning-of-line)
+        ;; Precision skip to the correct column
+        (dotimes (i col-index)
+          (search-forward "," (line-end-position) t))
+        
+        (let ((start (point)))
+          ;; Identify cell end
+          (if (search-forward "," (line-end-position) t)
+              (backward-char 1))
+          
+          (let* ((current-val (buffer-substring-no-properties start (point)))
+                 ;; Toggle Logic: If it's "1", make it "0". Everything else becomes "1".
+                 (new-val (if (string= current-val "1") "0" "1")))
+            (delete-region start (point))
+            (insert new-val))))
+      (message "pcCopy field toggled!"))))
+
+(define-key csv-mode-map (kbd "C-c s") 'book-toggle-pcCopy-inventory)
