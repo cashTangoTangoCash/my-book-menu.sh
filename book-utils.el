@@ -1,7 +1,7 @@
 ;; book-utils.el - Project-local functions
-;;; book-stamp-updated-today
+;;; my/book-stamp-updated-today
 
-(defun book-stamp-updated-today ()
+(defun my/book-stamp-updated-today ()
   "Find the lastUpdated column dynamically and insert YYYYMMDD.  call this function from book csv file."
   (interactive)
   (let* ((csv-path (buffer-file-name))
@@ -26,11 +26,11 @@
           (insert (format-time-string "%Y%m%d"))))
       (message "Date stamped in column %d!" col-index))))
 
-(define-key csv-mode-map (kbd "C-c d") 'book-stamp-updated-today)
+(define-key csv-mode-map (kbd "C-c u") 'my/book-stamp-updated-today)
 
-;;; book-stamp-read-today
+;;; my/book-stamp-read-today
 
-(defun book-stamp-read-today ()
+(defun my/book-stamp-read-today ()
   "Find the lastRead column dynamically and insert YYYYMMDD.  call this function from book csv file."
   (interactive)
   (let* ((csv-path (buffer-file-name))
@@ -55,11 +55,11 @@
           (insert (format-time-string "%Y%m%d"))))
       (message "Date stamped in column %d!" col-index))))
 
-(define-key csv-mode-map (kbd "C-c r") 'book-stamp-read-today)
+(define-key csv-mode-map (kbd "C-c d") 'my/book-stamp-read-today)
 
-;;; book-insert-new-record
+;;; my/book-insert-new-record
 
-(defun book-insert-new-record ()
+(defun my/book-insert-new-record ()
   "Insert a new record template, save, and run external ID sanitization."
   (interactive)
   (let* ((csv-path (buffer-file-name))
@@ -102,11 +102,11 @@
     
     (message "New record ready with ID assigned.")))
 
-(define-key csv-mode-map (kbd "C-c n") 'book-insert-new-record)
+(define-key csv-mode-map (kbd "C-c n") 'my/book-insert-new-record)
 
-;;; book-edit-comment-indirect
+;;; my/book-edit-comment-indirect
 
-(defun book-edit-comment-indirect ()
+(defun my/book-edit-comment-indirect ()
   "Jump to the comment column and trigger an indirect edit buffer."
   (interactive)
   (let* ((csv-path (buffer-file-name))
@@ -132,11 +132,11 @@
         (edit-indirect-region start end t)
         (message "Editing cell. C-c C-c to commit, C-c C-k to abort.")))))
 
-(define-key csv-mode-map (kbd "C-c c") 'book-edit-comment-indirect)
+(define-key csv-mode-map (kbd "C-c c") 'my/book-edit-comment-indirect)
 
-;;; book-toggle-queue
+;;; my/book-toggle-queue
 
-(defun book-toggle-queue ()
+(defun my/book-toggle-queue ()
   "Toggle the 'inQueue' field between 0 and 1."
   (interactive)
   (let* ((csv-path (buffer-file-name))
@@ -165,23 +165,27 @@
             (insert new-val))))
       (message "inQueue field toggled!"))))
 
-(define-key csv-mode-map (kbd "C-c q") 'book-toggle-queue)
+(define-key csv-mode-map (kbd "C-c q") 'my/book-toggle-queue)
 
-;;; book-tag-add 
+;;; my/book-tag-add 
 
-(defun book-tag-add ()
+(defun my/book-tag-add ()
   (interactive)
-  (book--tag-operate "--add" "Add Tag: "))
+  (my/book-tag-operate "--add" "Add Tag: "))
 
-;;; book-tag-remove
+(define-key csv-mode-map (kbd "C-c t") 'my/book-tag-add)
 
-(defun book-tag-remove ()
+;;; my/book-tag-remove
+
+(defun my/book-tag-remove ()
   (interactive)
-  (book--tag-operate "--remove" "Remove Tag: "))
+  (my/book-tag-operate "--remove" "Remove Tag: "))
 
-;;; book-tag-operate
+(define-key csv-mode-map (kbd "C-c r") 'my/book-tag-remove)
 
-(defun book--tag-operate (action prompt)
+;;; my/book-tag-operate
+
+(defun my/book-tag-operate (action prompt)
   "Save buffer, then call python to add/remove tags for the current row."
   ;; 1. CRITICAL: Save current edits (like the Title) so Python can see them
   (save-buffer)
@@ -214,13 +218,9 @@
               (message "Tag operation successful."))
           (error "Python script failed with exit code %d" exit-code))))))
 
-;; Bindings
-(define-key csv-mode-map (kbd "C-c t") 'book-tag-add)
-(define-key csv-mode-map (kbd "C-c r") 'book-tag-remove)
+;;; my/book-toggle-hardcopy-inventory
 
-;;; book-toggle-hardcopy-inventory
-
-(defun book-toggle-hardcopy-inventory ()
+(defun my/book-toggle-hardcopy-inventory ()
   "Toggle the 'hardcopy' field between 0 and 1 - take a book in and out of inventory"
   (interactive)
   (let* ((csv-path (buffer-file-name))
@@ -249,11 +249,11 @@
             (insert new-val))))
       (message "hardcopy field toggled!"))))
 
-(define-key csv-mode-map (kbd "C-c i") 'book-toggle-hardcopy-inventory)
+(define-key csv-mode-map (kbd "C-c i") 'my/book-toggle-hardcopy-inventory)
 
-;;; book-toggle-pcCopy-inventory
+;;; my/book-toggle-pcCopy-inventory
 
-(defun book-toggle-pcCopy-inventory ()
+(defun my/book-toggle-pcCopy-inventory ()
   "Toggle the 'pcCopy' field between 0 and 1 - take a book in and out of digital copy inventory"
   (interactive)
   (let* ((csv-path (buffer-file-name))
@@ -282,11 +282,11 @@
             (insert new-val))))
       (message "pcCopy field toggled!"))))
 
-(define-key csv-mode-map (kbd "C-c s") 'book-toggle-pcCopy-inventory)
+(define-key csv-mode-map (kbd "C-c s") 'my/book-toggle-pcCopy-inventory)
 
-;;; book-goto-field
+;;; my/book-goto-field
 
-(defun book-goto-field ()
+(defun my/book-goto-field ()
   "Dynamically prompt for a field name using a Python helper, then jump to it."
   (interactive)
   (let* ((csv-path "/home/dad84/Documents/2026/20260612-books-csv-file/books.csv")
@@ -310,4 +310,4 @@
             nil
           (message "Warning: This record doesn't seem to have all fields yet."))))))
 
-(define-key csv-mode-map (kbd "C-c f") 'book-goto-field)
+(define-key csv-mode-map (kbd "C-c f") 'my/book-goto-field)

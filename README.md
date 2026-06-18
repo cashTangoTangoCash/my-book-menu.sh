@@ -83,18 +83,18 @@ lisp tools have been loaded for: $CSV
 these tools operate on the record at point in emacs
 
 Helpful Shortcuts in CSV Mode:
-C-c f  -> Move cursor to a field in the present record by choosing field name in minibuffer (book-goto-field)
-C-c d  -> Stamp today's date in lastUpdated field of record at point (book-stamp-updated-today)
-C-c r  -> Stamp today's date in lastRead field of record at point (book-stamp-read-today)
-C-c n  -> Jump to bottom and insert new record (book-insert-new-record)
-C-c c  -> edit comment (Capture Mode) - (book-edit-comment-indirect)
+C-c f  -> Move cursor to a field in the present record by choosing field name in minibuffer (my/book-goto-field)
+C-c u  -> Stamp today's date in lastUpdated field of record at point (my/book-stamp-updated-today)
+C-c d  -> Stamp today's date in lastRead field of record at point (my/book-stamp-read-today)
+C-c n  -> Jump to bottom and insert new record (my/book-insert-new-record)
+C-c c  -> edit comment (Capture Mode) - (my/book-edit-comment-indirect)
 * Use C-c C-c to SAVE and EXIT capture
 * Use C-c C-k to DISCARD changes
-C-c q  -> add to, or remove from, (toggle) queue (0/1) - (book-toggle-queue)
-C-c t  -> add a tag - (book-tag-add)
-C-c r  -> remove a tag - (book-tag-remove)
-C-c i  -> toggle hardcopy status - (book-toggle-hardcopy-inventory)
-C-c s  -> toggle pcCopy status - (book-toggle-pcCopy-inventory)
+C-c q  -> add to, or remove from, (toggle) queue (0/1) - (my/book-toggle-queue)
+C-c t  -> add a tag - (my/book-tag-add)
+C-c r  -> remove a tag - (my/book-tag-remove)
+C-c i  -> toggle hardcopy status - (my/book-toggle-hardcopy-inventory)
+C-c s  -> toggle pcCopy status - (my/book-toggle-pcCopy-inventory)
 ==================================================
 ```
 
