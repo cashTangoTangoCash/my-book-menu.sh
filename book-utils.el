@@ -311,3 +311,58 @@
           (message "Warning: This record doesn't seem to have all fields yet."))))))
 
 (define-key csv-mode-map (kbd "C-c f") 'my/book-goto-field)
+
+;;; my/book-paste-and-strip-commas
+
+(defun my/book-paste-and-strip-commas ()
+  "Get text from the clipboard, remove all commas, and insert it at point."
+  (interactive)
+  (let ((clipboard-text (gui-get-selection 'CLIPBOARD 'STRING)))
+    (if (not clipboard-text)
+        (user-error "Clipboard is empty")
+      (let ((clean-text (replace-regexp-in-string "," "" clipboard-text)))
+        (insert clean-text)
+        (message "Pasted and stripped commas from title!")))))
+
+(define-key csv-mode-map (kbd "C-c y") 'my/book-paste-and-strip-commas)
+
+;;; my/book-help-workbench
+
+(defun my/book-help-workbench ()
+  "Dynamically scan Emacs memory for all 'my/book-' functions and generate a help buffer."
+  (interactive)
+  (let ((buf (get-buffer-create "*Book Workbench Help*"))
+        (collected-funcs nil))
+    
+    ;; 1. Scan the global symbol dictionary for functions matching our prefix
+    (mapatoms
+     (lambda (sym)
+       (when (and (fboundp sym)
+                  (string-match-p "^my/book-" (symbol-name sym)))
+         (push sym collected-funcs))))
+    
+    ;; Sort the functions alphabetically so the help buffer is easy to read
+    (setq collected-funcs (sort collected-funcs #'string<))
+    
+    (with-current-buffer buf
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert "==================================================\n")
+        (insert "           EMACS WORKBENCH: LIVE HELP             \n")
+        (insert "==================================================\n\n")
+        
+        ;; 2. Loop through our auto-detected list and grab docstrings
+        (if (null collected-funcs)
+            (insert "No functions starting with 'my/book-' were found in memory.\n\n")
+          (dolist (func collected-funcs)
+            (let ((doc (or (documentation func) "No documentation provided.")))
+              (insert (format "• %s\n" (symbol-name func)))
+              ;; Indent the documentation string cleanly
+              (insert (format "  %s\n\n" (replace-regexp-in-string "\n" "\n  " doc))))))
+        
+        (insert "==================================================\n")
+        (goto-char (point-min))
+        (view-mode 1)))
+    
+    ;; 3. Pop it open on screen
+    (pop-to-buffer buf)))

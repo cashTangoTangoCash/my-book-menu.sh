@@ -60,7 +60,9 @@ while true; do
 	    echo "  C-c r  -> remove a tag - (my/book-tag-remove)"
 	    echo "  C-c i  -> toggle hardcopy status - (my/book-toggle-hardcopy-inventory)"
 	    echo "  C-c s  -> toggle pcCopy status - (my/book-toggle-pcCopy-inventory)"
-	    
+	    echo "  C-c y  -> paste from the clipboard with commas stripped out (my/book-paste-and-strip-commas)"
+	    echo ""
+	    echo "my/book-help-workbench: call this to create a buffer that lists the lisp functions and their help blurbs"
 	    echo "=================================================="
 	    
 	    emacsclient -n "$CSV"
@@ -132,7 +134,7 @@ while true; do
 	    break
 	    ;;
 
-### menu choice l: duckdb query: 100 most recently viewed movies
+### menu choice l: duckdb query: 100 most recently read books
   
 	l)
 	    REPORT_TITLE="    100 Most Recently Read Books"	
@@ -187,16 +189,23 @@ done
 
 ### Execute DuckDB query, save report to /tmp, then open report in Emacs
 
-# in any menu choice that does not generate a query, you have to exit before the script gets here
-# in many menu choices, we have created a duckdb query.  now we generate a report via the query.
+# 1. Start with a completely fresh file and write a human-readable header
+echo "========================================================================" > "$REPORT"
+echo " REPORT TITLE : $REPORT_TITLE" >> "$REPORT"
+echo " GENERATED ON : $(date '+%Y-%m-%d %H:%M:%S')" >> "$REPORT"
+echo " SOURCE QUERY : $QUERY" >> "$REPORT"
+echo "========================================================================" >> "$REPORT"
+echo "" >> "$REPORT"
 
-# line mode looks ok
-echo "================================" > "$REPORT"
-echo "$REPORT_TITLE" >> "$REPORT"
-echo "================================" >> "$REPORT"
+# 2. Append the actual DuckDB data
 duckdb -c ".mode line" -c ".maxrows 0" -c "$QUERY" >> "$REPORT"
 
-# Open the report in your current Emacs session
-emacsclient -n "$REPORT"
+# 3. Safely murder the old buffer if it exists, then load the fresh file
+emacsclient -n --eval '(progn 
+  (when (get-buffer "book_report.txt")
+    (with-current-buffer "book_report.txt" 
+      (set-buffer-modified-p nil))
+    (kill-buffer "book_report.txt"))
+  (switch-to-buffer (find-file-noselect "'"$REPORT"'")))'
 
 echo "Report opened in Emacs buffer!"

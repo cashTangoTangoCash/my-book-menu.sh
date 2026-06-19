@@ -1,0 +1,33 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 23</h1>
+<p><strong><a href="20260619_140243_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260619_140249_capture.html">Next →</a></strong></p>
+<hr />
+<p>That is a massive workflow friction point. When you are rapidly spinning up different reports, the last thing you want is for Emacs to throw a roadblock and ask, <em>&quot;Hey, this file on disk changed, do you want to reread it?&quot;</em> The reason Emacs is badgering you is because <code>emacsclient</code> is recycling the exact same temporary file path (<code>$REPORT</code>) for every single report. Emacs notices that the file changed underneath its feet and tries to protect you from losing data.</p>
+<p>You have two excellent ways to fix this. One handles it directly from your Bash menu script, and the other handles it globally inside Emacs.</p>
+<hr />
+<h3>Solution 1: Unique Temp Files (The Bash Fix)</h3>
+<p>Instead of forcing Emacs to reuse the exact same file name over and over, you can dynamically append a high-resolution timestamp or a random number to the filename every time a query runs.</p>
+<p>This treats every report as a truly separate, disposable entity. Emacs will open them in clean, individual buffers (<code>book_report_1201.txt</code>, <code>book_report_1202.txt</code>) without ever complaining about a modified file.</p>
+<p>Modify the top of your <code>my-book-menu.sh</code> where you define your variables to look like this:</p>
+<pre><code class="language-bash"># Add a timestamp to the filename (HourMinuteSecond)
+TIMESTAMP=$(date +&quot;%H%M%S&quot;)
+REPORT=&quot;/tmp/book_report_${TIMESTAMP}.txt&quot;
+
+</code></pre>
+<p><strong>Why this is great:</strong> You can keep multiple reports open side-by-side on your second monitor to compare data, and they won't overwrite each other until your <code>/tmp</code> directory clears out on your next system reboot.</p>
+<hr />
+<h3>Solution 2: Global Auto-Revert (The Emacs Fix)</h3>
+<p>If you <em>prefer</em> having only a single report buffer that cleanly updates itself without accumulating clutter, you can tell Emacs to shut up and automatically refresh any buffer if its file changes on disk.</p>
+<p>Add this single line to your Emacs initialization file (<code>init.el</code> or <code>.emacs</code>):</p>
+<pre><code class="language-elisp">(global-auto-revert-mode 1)
+
+</code></pre>
+<p><strong>Why this is great:</strong> This completely silences the &quot;revert buffer?&quot; prompt globally. The exact second your DuckDB query updates the text inside <code>/tmp/book_report.txt</code>, your open Emacs buffer will instantly flash and display the new data automatically—zero typing or clicking required.</p>
+<h3>Which one fits best?</h3>
+<ul>
+<li>Choose <strong>Solution 1</strong> if you like having a history of the last few reports you ran sitting open in Emacs tabs or windows.</li>
+<li>Choose <strong>Solution 2</strong> if you want a true &quot;one-shot&quot; dashboard where hitting a menu key in the terminal immediately updates the exact same viewport on your Emacs screen.</li>
+</ul>
+<hr />
+<p><strong><a href="20260619_140243_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260619_140249_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260619_140247_capture.md&quot;)</p>

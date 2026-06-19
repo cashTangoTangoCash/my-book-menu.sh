@@ -1,0 +1,42 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 22</h1>
+<p><strong><a href="20260619_140234_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260619_140243_capture.html">Next →</a></strong></p>
+<hr />
+<p>You have hit upon the exact reason why the CSV (Comma-Separated Values) format is both a blessing and a curse. It is beautifully simple until your data—like a book title or a subtitle—natively contains the separator character itself.</p>
+<p>You are completely right about how Zotero and standard databases handle this. The universal standard for CSV formatting is called <strong>double-quote wrapping</strong> (or escaping).</p>
+<p>If a field has a comma in it, the database wraps the whole field in quotes so parser engines know to treat everything inside those quotes as a single block of text, rather than a column break:</p>
+<pre><code class="language-text">14,The Hobbit,Tolkien,fiction
+15,&quot;Economics: Principles, Problems, and Policies&quot;,McConnell,math
+
+</code></pre>
+<h3>The Catch with Your Current Setup</h3>
+<p>DuckDB and Python's <code>csv</code> module handle double-quoted fields perfectly out of the box. However, <strong>your current custom Emacs Lisp functions do not.</strong> Right now, functions like <code>book-goto-field</code> and <code>book-insert-new-record</code> navigate your data by doing a simple, literal search for commas on the line: <code>(search-forward &quot;,&quot; ...)</code>. If you start inserting titles with commas wrapped in quotes, those Elisp functions will get confused. They will count the comma <em>inside</em> the book title as a column divider, and your cursor will jump to the wrong fields.</p>
+<p>Because of that, your idea of a small Lisp function that strips commas from the clipboard is actually <strong>the most elegant, friction-free way</strong> to keep your current ecosystem perfectly stable without rewriting all your Elisp navigation logic.</p>
+<p>Here is a quick Lisp function that cleans your clipboard on the fly and pastes it.</p>
+<h3>The Solution: <code>book-paste-and-strip-commas</code></h3>
+<p>You can add this function to your Emacs setup:</p>
+<pre><code class="language-elisp">(defun book-paste-and-strip-commas ()
+  &quot;Get text from the clipboard, remove all commas, and insert it at point.&quot;
+  (interactive)
+  (let ((clipboard-text (gui-get-selection 'CLIPBOARD 'STRING)))
+    (if (not clipboard-text)
+        (user-error &quot;Clipboard is empty&quot;)
+      (let ((clean-text (replace-regexp-in-string &quot;,&quot; &quot;&quot; clipboard-text)))
+        (insert clean-text)
+        (message &quot;Pasted and stripped commas from title!&quot;)))))
+
+</code></pre>
+<h3>Bind it next to your workbench tools:</h3>
+<p>You can bind this to <code>C-c v</code> (for <strong>v</strong>iew/paste) or whatever shortcut fits your muscle memory:</p>
+<pre><code class="language-elisp">(local-set-key (kbd &quot;C-c v&quot;) #'book-paste-and-strip-commas)
+
+</code></pre>
+<h3>Why this fits your current &quot;plodding&quot; workflow:</h3>
+<ul>
+<li><strong>Zero System Shock:</strong> Your database schema remains 100% flat and predictable. You don't have to change a single line of your shell scripts, Python helpers, or DuckDB queries.</li>
+<li><strong>Typing Comfort:</strong> For your personal tracking, losing a comma in a title like <em>&quot;Data Structures, Algorithms, and Applications&quot;</em> doesn't hurt readability at all, but it saves you the headache of managing escaping characters.</li>
+<li><strong>The Manual &quot;Filter&quot;:</strong> Doing this manually right now is actually a great way to &quot;audit&quot; your library as you move it over, ensuring your tags are exactly how you want them rather than accepting a messy, automated bulk dump from Zotero.</li>
+</ul>
+<hr />
+<p><strong><a href="20260619_140234_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260619_140243_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260619_140240_capture.md&quot;)</p>

@@ -1,6 +1,6 @@
 <style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
 <h1>RESPONSE 21</h1>
-<p><strong><a href="20260616_000615_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | End →</strong></p>
+<p><strong><a href="20260616_000615_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260619_140234_capture.html">Next →</a></strong></p>
 <hr />
 <p>That makes perfect sense. Since your automated background script is handing you a shiny new ID out of the gate, dropping the cursor right at column 0 forces you to immediately hit your arrow keys or run <code>M-f</code> just to get over to the <code>title</code> field. Shaving off that small friction point is exactly how a tool starts feeling invisible.</p>
 <p>To implement this tweak, we can append a single line right after your function finds the beginning of the new line. We just tell Emacs to search forward for that first comma and park the cursor directly after it.</p>
@@ -53,5 +53,5 @@
 <p>Right before the success message fires, <code>(search-forward &quot;,&quot; (line-end-position) t 1)</code> hunts for the absolute first comma on that specific line. When it finds it, it jumps the cursor right over it.</p>
 <p>Now, when you fire off <code>C-c n</code>, the buffer will reload, and you can instantly start typing the title of your book without touching a arrow key.</p>
 <hr />
-<p><strong><a href="20260616_000615_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | End →</strong></p>
+<p><strong><a href="20260616_000615_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260619_140234_capture.html">Next →</a></strong></p>
 <p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260616_000622_capture.md&quot;)</p>

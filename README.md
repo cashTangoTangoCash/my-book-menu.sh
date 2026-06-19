@@ -95,6 +95,8 @@ C-c t  -> add a tag - (my/book-tag-add)
 C-c r  -> remove a tag - (my/book-tag-remove)
 C-c i  -> toggle hardcopy status - (my/book-toggle-hardcopy-inventory)
 C-c s  -> toggle pcCopy status - (my/book-toggle-pcCopy-inventory)
+
+my/book-help-workbench: call this to create a buffer that lists the lisp functions and their help blurbs
 ==================================================
 ```
 
