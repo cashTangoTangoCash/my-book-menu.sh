@@ -1,0 +1,54 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>PROMPT 36</h1>
+<p><strong><a href="20260620_235739_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260620_235752_capture.html">Next →</a></strong></p>
+<hr />
+<p>wow, earlier I was very much not in the mood to work on this and concentrate.  it was so bad.  I think I can try again.  first, let's spruce up process_smart_date.py a little bit.  Also add a docstring (I forgot how docstrings are done in python so I didn't try to mock that into this input):</p>
+<p>#!/usr/bin/env python3
+import sys
+from datetime import datetime</p>
+<p>def compute_smart_date(user_input, pub_year):
+    user_input = user_input.strip().lower()
+    pub_year = pub_year.strip() if pub_year else &quot;&quot;</p>
+<p>    # TODO require that pub_year be a four digit valid year
+    
+    # 1. Today's Date
+    if user_input == 't':
+        return datetime.now().strftime(&quot;%Y%m%d&quot;)
+        
+    # 2. Publication Year
+    if user_input == 'p':
+        if pub_year and len(pub_year) == 4 and pub_year.isdigit():
+            return f&quot;{pub_year}0101&quot;
+        return datetime.now().strftime(&quot;%Y0101&quot;)
+        
+    # Remove any letters to look at digit shorthands
+    digits = &quot;&quot;.join([c for c in user_input if c.isdigit()])
+    
+    # 3. Decade shorthand (e.g., 198 -&gt; 19800101)
+    if len(digits) == 3:
+        return f&quot;{digits}00101&quot;
+        
+    # 4. Year shorthand (e.g., 1980 -&gt; 19800101)
+    if len(digits) == 4:
+        return f&quot;{digits}0101&quot;
+        
+    # 5. Year + Month shorthand (e.g., 198003 -&gt; 19800301)
+    if len(digits) == 6:
+        return f&quot;{digits}01&quot;</p>
+<p>    #TODO if user_input doesn't match the preceding patterns throw an error
+    
+    # TODO if user claims to have read the book before it was published,
+    # throw an error
+    
+    return digits</p>
+<p>if <strong>name</strong> == &quot;<strong>main</strong>&quot;:
+    
+    # Expects arguments: script.py [input] [publication_year]
+    inp = sys.argv[1] if len(sys.argv) &gt; 1 else &quot;t&quot;
+    pyear = sys.argv[2] if len(sys.argv) &gt; 2 else &quot;&quot;
+    
+    # Print clean output directly for Emacs to catch
+    print(compute_smart_date(inp, pyear), end=&quot;&quot;)</p>
+<hr />
+<p><strong><a href="20260620_235739_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260620_235752_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260620_235743_capture.md&quot;)</p>

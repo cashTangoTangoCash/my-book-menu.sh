@@ -1,0 +1,25 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>RESPONSE 34</h1>
+<p><strong><a href="20260620_235716_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260620_235723_capture.html">Next →</a></strong></p>
+<hr />
+<p>Look closely at your terminal output—you actually <em>are</em> getting a printout!</p>
+<p>It's right here: <code>20260620</code>.</p>
+<p>Because I wrote <code>print(..., end=&quot;&quot;)</code> with that <code>end=&quot;&quot;</code> parameter at the end of the Python script, it tells Python: <em>&quot;Print this text, but do <strong>not</strong> print a newline character (<code>\n</code>) after it.&quot;</em></p>
+<p>As a result, Python prints the date, and then your terminal immediately slams your bash prompt (<code>[dad84@dad84-2013PC...]$</code>) right onto the very same line, causing them to run together.</p>
+<pre><code class="language-text">20260620[dad84@dad84-2013PC 20260612-books-csv-code]$ 
+^^^^^^^^
+ This is the script output!
+
+</code></pre>
+<h3>Why did I do that?</h3>
+<p>If Python prints a newline at the end of the script when running inside a terminal, <code>shell-command-to-string</code> inside Emacs will capture that newline character too. Your variable <code>processed-date</code> would end up holding <code>&quot;20260620\n&quot;</code>. When Emacs goes to insert that into your CSV row, it would accidentally drop a literal line break right into the middle of your book record, breaking the format.</p>
+<p>By omitting the newline, it looks ugly in the raw terminal test, but it arrives in Emacs as a perfectly clean, raw string of digits.</p>
+<h3>How to test it comfortably in the terminal:</h3>
+<p>If you want to test the script manually in your shell and have it look normal, just append a semicolon and an explicit <code>echo</code> command to force a newline in your terminal display:</p>
+<pre><code class="language-bash">python3 process_smart_date.py &quot;t&quot; &quot;2018&quot;; echo &quot;&quot;
+
+</code></pre>
+<p>That will push your prompt down to the next line so you can easily verify your <code>p</code>, <code>198</code>, and other shorthand expansions are working exactly as intended!</p>
+<hr />
+<p><strong><a href="20260620_235716_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260620_235723_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260620_235721_capture.md&quot;)</p>

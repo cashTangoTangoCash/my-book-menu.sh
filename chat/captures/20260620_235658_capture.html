@@ -1,0 +1,41 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>PROMPT 32</h1>
+<p><strong><a href="20260619_140344_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260620_235705_capture.html">Next →</a></strong></p>
+<hr />
+<p>I have sat around doing data entry and the boredom is oppressive.  I would like to take a stab at making an upgraded smarter version of:</p>
+<p>(defun my/book-stamp-read-today ()
+  &quot;Find the lastRead column dynamically and insert YYYYMMDD.  call this function from book csv file.&quot;
+  (interactive)
+  (let* ((csv-path (buffer-file-name))
+         ;; Call the Python script and capture the index
+         (col-index (string-to-number 
+                     (shell-command-to-string 
+                      (format &quot;python3 /home/dad84/Documents/2026/20260612-books-csv-code/get_column_index.py %s 'lastRead'&quot; csv-path)))))
+    
+    (if (&lt; col-index 0)
+        (error &quot;Could not find 'lastRead' column in CSV header!&quot;)
+      
+      (save-excursion
+        (beginning-of-line)
+        ;; Move forward by the number of commas Python found
+        (dotimes (i col-index)
+          (search-forward &quot;,&quot; (line-end-position) t))
+        
+        (let ((start (point)))
+          (if (search-forward &quot;,&quot; (line-end-position) t)
+              (backward-char 1))
+          (delete-region start (point))
+          (insert (format-time-string &quot;%Y%m%d&quot;))))
+      (message &quot;Date stamped in column %d!&quot; col-index))))</p>
+<p>(define-key csv-mode-map (kbd &quot;C-c d&quot;) 'my/book-stamp-read-today)</p>
+<p>I am thinking of a more interactive yet still speedy tool.  Most of the time I don't remember when I last read a book.  I might know the decade at least.  Maybe even the year.  If I had entered a publication year in the field &quot;year,&quot; that is a good first guess in some cases as to when I read the book, but in other cases it's a terrible guess.  I am reaching for a notion of a smart function that can fill out the complete lastRead field with a kind of autocomplete.</p>
+<p>hit t for todays date e.g. 20260620
+hit p for publication year (year field) converted to e.g. 20180101
+198 RET results in 19800101
+1980 RET again gives 19800101
+198003 RET gives 19800301</p>
+<p>it would be more appealing to have TAB completion which fills in the result so it can be approved with RET</p>
+<p>can this all be done in emacs lisp, or is handoff to python necessary?</p>
+<hr />
+<p><strong><a href="20260619_140344_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260620_235705_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260620_235658_capture.md&quot;)</p>

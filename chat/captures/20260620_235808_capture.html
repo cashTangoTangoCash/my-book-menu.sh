@@ -1,0 +1,16 @@
+<style>table{border-collapse:collapse;width:100%;margin:1em 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background-color:#f8f8f8;}</style>
+<h1>PROMPT 37</h1>
+<p><strong><a href="20260620_235752_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260620_235830_capture.html">Next →</a></strong></p>
+<hr />
+<p>ok, on to the lisp part.  I renamed it.  A first issue I notice is that I do not believe the current / existing version of my/book-goto-field is capable of being called from lisp.  I used my org roam notes to remember meta-: and verified that (my/book-goto-field &quot;title&quot;) fails:</p>
+<p>Debugger entered--Lisp error: (wrong-number-of-arguments #f(lambda () :dynbind &quot;Dynamically prompt for a field name using a Python helper, then jump to it.&quot; (interactive nil) (let* ((csv-path &quot;/home/dad84/Documents/2026/20260612-books-csv-file/books.csv&quot;) (script-path &quot;/home/dad84/Documents/2026/20260612-books-csv-code/get_csv_headers.py&quot;) (cmd-str (format &quot;python3 %s %s&quot; script-path csv-path)) (raw-output (shell-command-to-string cmd-str)) (fields (read (format &quot;(%s)&quot; raw-output))) (field (completing-read &quot;Go to field: &quot; fields nil t)) (target-index (cl-position field fields :test #'string=))) (if (not target-index) (error &quot;Field not found in schema&quot;) (move-beginning-of-line 1) (if (&gt; target-index 0) (progn (if (search-forward &quot;,&quot; ... t target-index) nil (message &quot;Warning: This record doesn't seem to have all fields yet.&quot;))))))) 1)
+  my/book-goto-field(&quot;year&quot;)
+  eval((my/book-goto-field &quot;year&quot;) t)
+  #f(compiled-function () #&lt;bytecode -0x9fb644235486416&gt;)()
+  #f(compiled-function () #&lt;bytecode -0x5db3e1955cb81d1&gt;)()
+  eval-expression((my/book-goto-field &quot;year&quot;) nil nil 127)
+  funcall-interactively(eval-expression (my/book-goto-field &quot;year&quot;) nil nil 127)
+  command-execute(eval-expression)</p>
+<hr />
+<p><strong><a href="20260620_235752_capture.html">← Previous</a> | <a href="../full_transcript.html">Full Index</a> | <a href="20260620_235830_capture.html">Next →</a></strong></p>
+<p>Edit: (find-file &quot;/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260620_235808_capture.md&quot;)</p>

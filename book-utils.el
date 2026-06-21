@@ -28,7 +28,7 @@
 
 (define-key csv-mode-map (kbd "C-c u") 'my/book-stamp-updated-today)
 
-;;; my/book-stamp-read-today
+;;; my/book-stamp-read-today OLD
 
 (defun my/book-stamp-read-today ()
   "Find the lastRead column dynamically and insert YYYYMMDD.  call this function from book csv file."
@@ -55,7 +55,7 @@
           (insert (format-time-string "%Y%m%d"))))
       (message "Date stamped in column %d!" col-index))))
 
-(define-key csv-mode-map (kbd "C-c d") 'my/book-stamp-read-today)
+;; (define-key csv-mode-map (kbd "C-c d") 'my/book-stamp-read-today)
 
 ;;; my/book-insert-new-record
 
@@ -286,31 +286,29 @@
 
 ;;; my/book-goto-field
 
-(defun my/book-goto-field ()
-  "Dynamically prompt for a field name using a Python helper, then jump to it."
+(defun my/book-goto-field (&optional field-name)
+  "Jump to the column for FIELD-NAME. 
+If FIELD-NAME is omitted, interactively prompt the user via the minibuffer."
   (interactive)
-  (let* ((csv-path "/home/dad84/Documents/2026/20260612-books-csv-file/books.csv")
+  (let* ((csv-path (buffer-file-name))
          (script-path "/home/dad84/Documents/2026/20260612-books-csv-code/get_csv_headers.py")
-         
-         ;; Run the python script and wrap its output in standard Lisp parentheses: ("id" "title" ...)
          (cmd-str (format "python3 %s %s" script-path csv-path))
          (raw-output (shell-command-to-string cmd-str))
          (fields (read (format "(%s)" raw-output)))
-         
-         ;; Prompt the user with the dynamic list
-         (field (completing-read "Go to field: " fields nil t))
-         (target-index (cl-position field fields :test #'string=)))
+         ;; Use the passed field-name; if nil, prompt the user interactively
+         (target-field (or field-name 
+                           (completing-read "Go to field: " fields nil t)))
+         (target-index (cl-position target-field fields :test #'string=)))
     
     (if (not target-index)
-        (error "Field not found in schema")
-      ;; Move to start of line, then skip past N commas
-      (move-beginning-of-line 1)
+        (error "Field '%s' not found in schema" target-field)
+      (beginning-of-line)
       (when (> target-index 0)
         (if (search-forward "," (line-end-position) t target-index)
             nil
           (message "Warning: This record doesn't seem to have all fields yet."))))))
 
-(define-key csv-mode-map (kbd "C-c f") 'my/book-goto-field)
+(define-key csv-mode-map (kbd "C-c g") 'my/book-goto-field)
 
 ;;; my/book-paste-and-strip-commas
 
@@ -366,3 +364,55 @@
     
     ;; 3. Pop it open on screen
     (pop-to-buffer buf)))
+
+;;; my/book-lastRead-data-entry
+
+(defun my/book-lastRead-date-entry ()
+  "Interactively prompt for lastRead date and process via Python script."
+  (interactive)
+  (let* ((csv-path (buffer-file-name))
+         (csv-buffer-name (buffer-name)) ; Save the exact name of your CSV buffer
+         (py-script "/home/dad84/Documents/2026/20260612-books-csv-code/process_smart_date.py")
+         
+         ;; 1. Safely hop to the 'year' column using our upgraded hybrid function
+         (starting-point (point))
+         (_ (my/book-goto-field "year"))
+         (year-start (point))
+         (_ (if (search-forward "," (line-end-position) t) (backward-char 1)))
+         (pub-year (string-trim (buffer-substring-no-properties year-start (point))))
+         
+         ;; 2. Return the cursor back to the user's working spot
+         (_ (goto-char starting-point))
+         
+         ;; 3. Prompt user for shortcut input
+         (user-input (completing-read "Enter Date shortcut/digits (t/p/198/1980): " 
+                                      '("t" "p") nil nil))
+         
+         ;; 4. Call Python and separate standard output from error channel
+         (cmd (format "python3 %s '%s' '%s'" py-script user-input pub-year))
+         (output-buffer (generate-new-buffer " *book-date-temp*")))
+    
+    (unwind-protect
+        ;; Run the command, channeling errors cleanly
+        (let ((exit-code (shell-command cmd output-buffer output-buffer)))
+          (with-current-buffer output-buffer
+            (let ((result-text (string-trim (buffer-string))))
+              (if (/= exit-code 0)
+                  ;; If Python exited with an error code (sys.exit(1)), crash gracefully here
+                  (error "%s" result-text)
+                
+                ;; 5. FIX: Explicitly shift focus back to your actual CSV data buffer
+                (set-buffer csv-buffer-name)
+                
+                ;; 6. Success! Jump to 'lastRead' and insert the stamped date
+                (my/book-goto-field "lastRead")
+                (let ((field-start (point)))
+                  (if (search-forward "," (line-end-position) t)
+                      (backward-char 1))
+                  (delete-region field-start (point))
+                  (insert result-text)
+                  (message "Stamped: %s" result-text))))))
+      ;; Clean up our temporary execution buffer behind the scenes
+      (kill-buffer output-buffer))))
+
+(define-key csv-mode-map (kbd "C-c d") 'my/book-lastRead-date-entry)

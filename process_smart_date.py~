@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+import sys
+from datetime import datetime
+
+def compute_smart_date(user_input, pub_year):
+    user_input = user_input.strip().lower()
+    pub_year = pub_year.strip() if pub_year else ""
+
+    # TODO require that pub_year be a four digit valid year
+    
+    # 1. Today's Date
+    if user_input == 't':
+        return datetime.now().strftime("%Y%m%d")
+        
+    # 2. Publication Year
+    if user_input == 'p':
+        if pub_year and len(pub_year) == 4 and pub_year.isdigit():
+            return f"{pub_year}0101"
+        return datetime.now().strftime("%Y0101")
+        
+    # Remove any letters to look at digit shorthands
+    digits = "".join([c for c in user_input if c.isdigit()])
+    
+    # 3. Decade shorthand (e.g., 198 -> 19800101)
+    if len(digits) == 3:
+        return f"{digits}00101"
+        
+    # 4. Year shorthand (e.g., 1980 -> 19800101)
+    if len(digits) == 4:
+        return f"{digits}0101"
+        
+    # 5. Year + Month shorthand (e.g., 198003 -> 19800301)
+    if len(digits) == 6:
+        return f"{digits}01"
+
+    #TODO if user_input doesn't match the preceding patterns throw an error
+    
+    # TODO if user claims to have read the book before it was published,
+    # throw an error
+    
+    return digits
+
+if __name__ == "__main__":
+    
+    # Expects arguments: script.py [input] [publication_year]
+    inp = sys.argv[1] if len(sys.argv) > 1 else "t"
+    pyear = sys.argv[2] if len(sys.argv) > 2 else ""
+    
+    # Print clean output directly for Emacs to catch
+    print(compute_smart_date(inp, pyear), end="")
