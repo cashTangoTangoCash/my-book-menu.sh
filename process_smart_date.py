@@ -35,8 +35,8 @@ def compute_smart_date(user_input, pub_year):
     if user_input == 'p':
         if pub_year:
             return f"{pub_year}0101"
-        # Fallback if the field was empty in the CSV row
-        return datetime.now().strftime("%Y0101")
+        # Raise an error instead of defaulting to today's date
+        raise ValueError("Cannot use shortcut 'p' because the 'year' field is blank for this record.")
         
     # Clean and isolate numeric input for shorthands
     digits = "".join([c for c in user_input if c.isdigit()])
