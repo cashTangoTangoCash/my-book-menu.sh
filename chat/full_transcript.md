@@ -3060,3 +3060,122 @@ Keep committing locally whenever you hit a small milestone that works. It keeps 
 Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260621_001254_capture.md")
 
 ---
+
+# PROMPT 40
+Let's improve my/book-help-workbench to also print keyboard shortcuts for each function, and to omit non-interactive functions.
+
+(defun my/book-help-workbench ()
+  "Dynamically scan Emacs memory for all 'my/book-' functions and generate a help buffer."
+  (interactive)
+  (let ((buf (get-buffer-create "*Book Workbench Help*"))
+        (collected-funcs nil))
+    
+    ;; 1. Scan the global symbol dictionary for functions matching our prefix
+    (mapatoms
+     (lambda (sym)
+       (when (and (fboundp sym)
+                  (string-match-p "^my/book-" (symbol-name sym)))
+         (push sym collected-funcs))))
+    
+    ;; Sort the functions alphabetically so the help buffer is easy to read
+    (setq collected-funcs (sort collected-funcs #'string<))
+    
+    (with-current-buffer buf
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert "==================================================\n")
+        (insert "           EMACS WORKBENCH: LIVE HELP             \n")
+        (insert "==================================================\n\n")
+        
+        ;; 2. Loop through our auto-detected list and grab docstrings
+        (if (null collected-funcs)
+            (insert "No functions starting with 'my/book-' were found in memory.\n\n")
+          (dolist (func collected-funcs)
+            (let ((doc (or (documentation func) "No documentation provided.")))
+              (insert (format "• %s\n" (symbol-name func)))
+              ;; Indent the documentation string cleanly
+              (insert (format "  %s\n\n" (replace-regexp-in-string "\n" "\n  " doc))))))
+        
+        (insert "==================================================\n")
+        (goto-char (point-min))
+        (view-mode 1)))
+    
+    ;; 3. Pop it open on screen
+    (pop-to-buffer buf)))
+
+(define-key csv-mode-map (kbd "C-c h") 'my/book-help-workbench)
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260621_125008_capture.md")
+
+---
+
+# RESPONSE 40
+This is a fantastic enhancement for a self-documenting workbench. By filtering out non-interactive functions, we ensure that purely internal helper functions (like the one that scrapes a single field value from the line) don't clutter your view. Adding the active keybindings completes the layout, making it a true, dynamic cheat sheet.
+
+To do this natively in Emacs Lisp:
+
+1. **Omit Non-Interactive Functions:** We look for the `commandp` predicate instead of just `fboundp`. In Emacs, a "command" is a function explicitly configured with an `(interactive)` form.
+2. **Find Keyboard Shortcuts:** We use the built-in function `where-is-internal`. This looks up a function symbol across all active keymaps and returns a clean string representing the human-readable shortcut (like `C-c d` or `C-c h`), or indicates if it is unbound.
+
+Here is the upgraded `my/book-help-workbench`:
+
+```elisp
+(defun my/book-help-workbench ()
+  "Dynamically scan Emacs memory for all interactive 'my/book-' commands,
+displaying them along with their documentation and active keyboard shortcuts."
+  (interactive)
+  (let ((buf (get-buffer-create "*Book Workbench Help*"))
+        (collected-funcs nil))
+    
+    ;; 1. Scan global symbol dictionary for functions matching prefix AND interactive status
+    (mapatoms
+     (lambda (sym)
+       (when (and (commandp sym) ; Filters out non-interactive helper functions
+                  (string-match-p "^my/book-" (symbol-name sym)))
+         (push sym collected-funcs))))
+    
+    ;; Sort the functions alphabetically so the help buffer is easy to read
+    (setq collected-funcs (sort collected-funcs #'string<))
+    
+    (with-current-buffer buf
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert "==================================================\n")
+        (insert "           EMACS WORKBENCH: LIVE HELP             \n")
+        (insert "==================================================\n\n")
+        
+        ;; 2. Loop through our auto-detected command list
+        (if (null collected-funcs)
+            (insert "No interactive functions starting with 'my/book-' were found in memory.\n\n")
+          (dolist (func collected-funcs)
+            (let* ((doc (or (documentation func) "No documentation provided."))
+                   ;; Look up active keybindings for this specific command symbol
+                   (keys (where-is-internal func csv-mode-map t))
+                   (key-str (if keys (key-description keys) "Unbound")))
+              
+              ;; Print command name and its shortcut right next to it
+              (insert (format "• %s  [%s]\n" (symbol-name func) key-str))
+              ;; Indent the documentation string cleanly
+              (insert (format "  %s\n\n" (replace-regexp-in-string "\n" "\n  " doc))))))
+        
+        (insert "==================================================\n")
+        (goto-char (point-min))
+        (view-mode 1)))
+    
+    ;; 3. Pop it open on screen
+    (pop-to-buffer buf)))
+
+(define-key csv-mode-map (kbd "C-c h") 'my/book-help-workbench)
+
+```
+
+### Why this structure works perfectly:
+
+* **`(commandp sym)`**: This is the gatekeeper. Functions that exist simply to pass parameters to Python or grab context variables are hidden automatically. Only your actual, operational user tools make the cut.
+* **`where-is-internal` & `key-description**`: By querying `csv-mode-map` directly, it grabs the shortcut context you specified in your configuration. If you rebind `my/book-lastRead-date-entry` to a different string tomorrow, this layout will dynamically pick up that change on the fly.
+
+Evaluate this new block and hit `C-c h`—your help screen will show you a perfectly clean console dashboard of everything currently at your disposal!
+
+Edit: (find-file "/home/dad84/Documents/2026/20260612-books-csv-code/chat/captures/20260621_125012_capture.md")
+
+---

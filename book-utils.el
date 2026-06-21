@@ -28,35 +28,6 @@
 
 (define-key csv-mode-map (kbd "C-c u") 'my/book-stamp-updated-today)
 
-;;; my/book-stamp-read-today OLD
-
-(defun my/book-stamp-read-today ()
-  "Find the lastRead column dynamically and insert YYYYMMDD.  call this function from book csv file."
-  (interactive)
-  (let* ((csv-path (buffer-file-name))
-         ;; Call the Python script and capture the index
-         (col-index (string-to-number 
-                     (shell-command-to-string 
-                      (format "python3 /home/dad84/Documents/2026/20260612-books-csv-code/get_column_index.py %s 'lastRead'" csv-path)))))
-    
-    (if (< col-index 0)
-        (error "Could not find 'lastRead' column in CSV header!")
-      
-      (save-excursion
-        (beginning-of-line)
-        ;; Move forward by the number of commas Python found
-        (dotimes (i col-index)
-          (search-forward "," (line-end-position) t))
-        
-        (let ((start (point)))
-          (if (search-forward "," (line-end-position) t)
-              (backward-char 1))
-          (delete-region start (point))
-          (insert (format-time-string "%Y%m%d"))))
-      (message "Date stamped in column %d!" col-index))))
-
-;; (define-key csv-mode-map (kbd "C-c d") 'my/book-stamp-read-today)
-
 ;;; my/book-insert-new-record
 
 (defun my/book-insert-new-record ()
@@ -170,6 +141,7 @@
 ;;; my/book-tag-add 
 
 (defun my/book-tag-add ()
+  "Add a tag to a record"
   (interactive)
   (my/book-tag-operate "--add" "Add Tag: "))
 
@@ -178,6 +150,7 @@
 ;;; my/book-tag-remove
 
 (defun my/book-tag-remove ()
+  "Remove a tag from a record"
   (interactive)
   (my/book-tag-operate "--remove" "Remove Tag: "))
 
@@ -287,8 +260,7 @@
 ;;; my/book-goto-field
 
 (defun my/book-goto-field (&optional field-name)
-  "Jump to the column for FIELD-NAME. 
-If FIELD-NAME is omitted, interactively prompt the user via the minibuffer."
+  "Jump to the column for FIELD-NAME. If FIELD-NAME is omitted, interactively prompt the user via the minibuffer."
   (interactive)
   (let* ((csv-path (buffer-file-name))
          (script-path "/home/dad84/Documents/2026/20260612-books-csv-code/get_csv_headers.py")
@@ -327,15 +299,16 @@ If FIELD-NAME is omitted, interactively prompt the user via the minibuffer."
 ;;; my/book-help-workbench
 
 (defun my/book-help-workbench ()
-  "Dynamically scan Emacs memory for all 'my/book-' functions and generate a help buffer."
+  "Dynamically scan Emacs memory for all interactive 'my/book-' commands,
+displaying them along with their documentation and active keyboard shortcuts."
   (interactive)
   (let ((buf (get-buffer-create "*Book Workbench Help*"))
         (collected-funcs nil))
     
-    ;; 1. Scan the global symbol dictionary for functions matching our prefix
+    ;; 1. Scan global symbol dictionary for functions matching prefix AND interactive status
     (mapatoms
      (lambda (sym)
-       (when (and (fboundp sym)
+       (when (and (commandp sym) ; Filters out non-interactive helper functions
                   (string-match-p "^my/book-" (symbol-name sym)))
          (push sym collected-funcs))))
     
@@ -349,12 +322,17 @@ If FIELD-NAME is omitted, interactively prompt the user via the minibuffer."
         (insert "           EMACS WORKBENCH: LIVE HELP             \n")
         (insert "==================================================\n\n")
         
-        ;; 2. Loop through our auto-detected list and grab docstrings
+        ;; 2. Loop through our auto-detected command list
         (if (null collected-funcs)
-            (insert "No functions starting with 'my/book-' were found in memory.\n\n")
+            (insert "No interactive functions starting with 'my/book-' were found in memory.\n\n")
           (dolist (func collected-funcs)
-            (let ((doc (or (documentation func) "No documentation provided.")))
-              (insert (format "• %s\n" (symbol-name func)))
+            (let* ((doc (or (documentation func) "No documentation provided."))
+                   ;; Look up active keybindings for this specific command symbol
+                   (keys (where-is-internal func csv-mode-map t))
+                   (key-str (if keys (key-description keys) "Unbound")))
+              
+              ;; Print command name and its shortcut right next to it
+              (insert (format "• %s  [%s]\n" (symbol-name func) key-str))
               ;; Indent the documentation string cleanly
               (insert (format "  %s\n\n" (replace-regexp-in-string "\n" "\n  " doc))))))
         
@@ -365,10 +343,12 @@ If FIELD-NAME is omitted, interactively prompt the user via the minibuffer."
     ;; 3. Pop it open on screen
     (pop-to-buffer buf)))
 
+(define-key csv-mode-map (kbd "C-c h") 'my/book-help-workbench)
+
 ;;; my/book-lastRead-data-entry
 
 (defun my/book-lastRead-date-entry ()
-  "Interactively prompt for lastRead date and process via Python script."
+  "Interactively prompt for lastRead date.  t means today.  p means publication date.  Otherwise enter e.g. 2026 or 202601 or 20260101 and YYYYMMDD will be auto-completed."
   (interactive)
   (let* ((csv-path (buffer-file-name))
          (csv-buffer-name (buffer-name)) ; Save the exact name of your CSV buffer
