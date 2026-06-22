@@ -83,9 +83,9 @@ lisp tools have been loaded for: $CSV
 these tools operate on the record at point in emacs
 
 Helpful Shortcuts in CSV Mode:
-C-c f  -> Move cursor to a field in the present record by choosing field name in minibuffer (my/book-goto-field)
+C-c g  -> Move cursor to a field in the present record by choosing field name in minibuffer (my/book-goto-field)
 C-c u  -> Stamp today's date in lastUpdated field of record at point (my/book-stamp-updated-today)
-C-c d  -> Stamp today's date in lastRead field of record at point (my/book-stamp-read-today)
+C-c d  -> Interactively prompt for lastRead date.  (my/book-lastRead-date-entry)
 C-c n  -> Jump to bottom and insert new record (my/book-insert-new-record)
 C-c c  -> edit comment (Capture Mode) - (my/book-edit-comment-indirect)
 * Use C-c C-c to SAVE and EXIT capture
@@ -95,8 +95,7 @@ C-c t  -> add a tag - (my/book-tag-add)
 C-c r  -> remove a tag - (my/book-tag-remove)
 C-c i  -> toggle hardcopy status - (my/book-toggle-hardcopy-inventory)
 C-c s  -> toggle pcCopy status - (my/book-toggle-pcCopy-inventory)
-
-my/book-help-workbench: call this to create a buffer that lists the lisp functions and their help blurbs
+C-c h  -> print out a cheatsheet for these lisp functions in a new emacs buffer (my/book-help-workbench)
 ==================================================
 ```
 

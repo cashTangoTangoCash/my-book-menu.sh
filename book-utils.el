@@ -70,6 +70,8 @@
     (when (search-forward "," (line-end-position) t 1)
       ;; Point is now placed exactly after the first comma. Ready to type!
       nil)
+
+    (my/book-stamp-updated-today)
     
     (message "New record ready with ID assigned.")))
 
